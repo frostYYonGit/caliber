@@ -1,0 +1,112 @@
+@import 'tailwindcss';
+
+/* ------------------------------------------------------------------ *
+ * CALIBER design tokens (§7). Contrast-checked against --bg/--surface.
+ * No readable text color below --color-textmut (#9CA3AE, ~6:1) ever.
+ * ------------------------------------------------------------------ */
+@theme {
+  --color-bg: #0e0f12; /* base */
+  --color-surface: #16181c; /* cards */
+  --color-raised: #1c2026; /* inputs */
+  --color-line: #2a2d33; /* borders */
+  --color-text: #f5f6f8; /* PRIMARY text — ~15:1 on bg */
+  --color-text2: #c2c8d2; /* secondary/body — ~9:1 */
+  --color-textmut: #9ca3ae; /* ~6:1 — tiny captions/labels only */
+  --color-accent: #ff7a2e; /* molten brand */
+  --color-accent-dim: #c85e22;
+
+  --font-display: 'Archivo', 'Arial Narrow', sans-serif;
+  --font-ui: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, monospace;
+
+  --radius-card: 18px;
+}
+
+/* Display type uses the Expanded (width 125) Archivo instances. */
+.font-display {
+  font-stretch: 125%;
+  letter-spacing: -0.01em;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Subtle brushed-steel atmosphere on the base canvas. */
+.app-bg {
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(255, 122, 46, 0.06), transparent 60%),
+    radial-gradient(80% 60% at 80% 110%, rgba(95, 176, 236, 0.04), transparent 60%),
+    var(--color-bg);
+}
+
+/* Visible keyboard focus everywhere (§8). Pointer users don't see it. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Kill number-input spinners — we use our own steppers. */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+@keyframes ir-stamp {
+  0% {
+    transform: scale(0.4) rotate(-8deg);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.08) rotate(1deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+.ir-stamp {
+  animation: ir-stamp 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+}
+
+@keyframes ir-fade-up {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.ir-fade-up {
+  animation: ir-fade-up 0.45s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

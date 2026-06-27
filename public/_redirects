@@ -1,0 +1,3 @@
+# Netlify SPA fallback — every path serves the app so /r?... result links resolve.
+# (On Vercel, vercel.json handles routing instead; this file is harmless there.)
+/*    /index.html   200
