@@ -50,6 +50,11 @@ export function Population() {
           );
         })}
       </div>
+      {state.population && (
+        <p className="mt-4 text-center text-[13px] leading-snug text-text2">
+          Honest comparison. It’s printed on your card, so the ranking can’t be gamed.
+        </p>
+      )}
     </StepShell>
   );
 }

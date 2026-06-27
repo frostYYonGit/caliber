@@ -22,39 +22,39 @@ export function LiftCard({ id }: { id: LiftId }) {
       {meta.addedLoad ? 'Added weight over bodyweight' : 'Enter your best set'}
     </span>
   );
+  // Reaffirming, signal-true per-lift feedback (Edit B) — never shames a low number.
+  let affirm: { text: string; cls: string } | null = null;
 
   if (canScore) {
     const weightKg = toKg(weightNum, state.unit);
     const est1rm = oneRM(weightKg, draft.reps);
     const ratio = est1rm / bwKg;
-    let tail: ReactNode;
-    if (meta.scored) {
-      const res = scoreLift(
-        { id, weightKg, reps: draft.reps },
-        {
-          sex: state.sex!,
-          age: parseNum(state.age),
-          bodyweightKg: bwKg,
-          population: state.population,
-        },
-      );
-      tail = (
-        <span style={{ color: TIER_COLOR[res.tier] }} className="font-semibold">
-          {res.tier}
-        </span>
-      );
-    } else {
-      tail = <span className="text-textmut">tracked</span>;
-    }
+    const res = scoreLift(
+      { id, weightKg, reps: draft.reps },
+      {
+        sex: state.sex!,
+        age: parseNum(state.age),
+        bodyweightKg: bwKg,
+        population: state.population,
+      },
+    );
     readout = (
       <span className="text-text2">
         ≈ <span className="text-text">{formatWeight(est1rm, state.unit)}</span> 1RM
         <span className="mx-1.5 text-line">·</span>
         {ratio.toFixed(2)}× BW
         <span className="mx-1.5 text-line">·</span>
-        {tail}
+        <span style={{ color: TIER_COLOR[res.tier] }} className="font-semibold">
+          {res.tier}
+        </span>
       </span>
     );
+    affirm =
+      res.percentile >= 80
+        ? { text: 'Strong number — top of the pack.', cls: 'text-accent' }
+        : res.percentile >= 40
+          ? { text: 'Solid. Right in the mix.', cls: 'text-text2' }
+          : { text: 'Logged. That’s your baseline to beat.', cls: 'text-textmut' };
   }
 
   const setReps = (delta: number) =>
@@ -135,6 +135,7 @@ export function LiftCard({ id }: { id: LiftId }) {
       </div>
 
       <p className="font-mono mt-2.5 text-[13px]">{readout}</p>
+      {affirm && <p className={`mt-1 text-[12px] ${affirm.cls}`}>{affirm.text}</p>}
     </div>
   );
 }

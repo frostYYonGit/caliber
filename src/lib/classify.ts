@@ -6,10 +6,11 @@
  *   Specialist → Different Breed → Prospect → Glass Cannon → Mirror Athlete
  *   → The Mule → Powerbuilder.
  *
- * A full type needs ≥1 UPPER lift AND ≥1 LOWER lift; otherwise returns null and
- * the UI shows a teaser ("Enter a press and a pull to reveal your type").
+ * Only COMPOUND lifts drive the type (isolation lifts show a percentile but
+ * never classify). A full type needs ≥1 UPPER compound AND ≥1 LOWER compound;
+ * otherwise returns null and the UI shows a teaser.
  */
-import { LIFT_BY_ID, WEIGHT, type Group, type LiftId } from '../data/standards';
+import { LIFT_BY_ID, WEIGHT, isCompound, type Group, type LiftId } from '../data/standards';
 import type { ArchetypeId } from '../data/archetypes';
 import type { LiftResult } from './scoring';
 
@@ -52,10 +53,12 @@ function weightedMean(lifts: LiftResult[]): number {
 
 const groupOf = (id: LiftId): Group => LIFT_BY_ID[id].group;
 
-/** Classify a lifter, or null when one of the two groups is missing. */
+/** Classify a lifter, or null when an upper/lower compound is missing. */
 export function classify(lifts: LiftResult[], overallPct: number): Classification | null {
-  const upper = lifts.filter((l) => groupOf(l.id) === 'upper');
-  const lower = lifts.filter((l) => groupOf(l.id) === 'lower');
+  // Only compounds drive the type; isolation lifts are ignored here.
+  const compounds = lifts.filter((l) => isCompound(l.id));
+  const upper = compounds.filter((l) => groupOf(l.id) === 'upper');
+  const lower = compounds.filter((l) => groupOf(l.id) === 'lower');
   if (upper.length === 0 || lower.length === 0) return null;
 
   const upperPct = weightedMean(upper);
@@ -64,13 +67,13 @@ export function classify(lifts: LiftResult[], overallPct: number): Classificatio
   const lean: Lean = gap >= LEAN_GAP ? 'upper' : gap <= -LEAN_GAP ? 'lower' : 'balanced';
   const base = { lean, upperPct, lowerPct };
 
-  const sorted = [...lifts].sort((a, b) => b.percentile - a.percentile);
+  const sorted = [...compounds].sort((a, b) => b.percentile - a.percentile);
   const best = sorted[0];
   const second = sorted[1];
 
   // 1. Specialist — one named lift towering over the next best.
   if (
-    lifts.length >= SPECIALIST_MIN_LIFTS &&
+    compounds.length >= SPECIALIST_MIN_LIFTS &&
     SPECIALIST_MAP[best.id] &&
     best.percentile >= SPECIALIST_MIN_PCT &&
     second &&

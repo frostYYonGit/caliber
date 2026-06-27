@@ -1,21 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
+import { useQuiz } from '../state/QuizContext';
+import { POP_LABEL } from '../data/standards';
 
-const LINES = [
-  'Estimating 1-rep maxes',
-  'Adjusting for bodyweight',
-  'Age-calibrating standards',
-  'Ranking against population',
-  'Computing DOTS',
-];
-
-const DURATION = 1500;
+const DURATION = 1600;
 
 const prefersReduced = () =>
   typeof window !== 'undefined' &&
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-/** ~1.5s calibration overlay with cycling status lines + scrambling number (§2). */
+/** Calibration overlay → personalized build beat, ending on "Found your type." */
 export function Analyzing({ onDone }: { onDone: () => void }) {
+  const { state } = useQuiz();
+  const pop = state.population ? POP_LABEL[state.population] : 'the field';
+
+  const LINES = [
+    'Estimating your 1-rep maxes',
+    'Age-calibrating your numbers',
+    `Reading your lifts against ${pop}`,
+    'Found your type',
+  ];
+
   const [line, setLine] = useState(0);
   const [num, setNum] = useState(0);
   const doneRef = useRef(onDone);
@@ -26,8 +30,9 @@ export function Analyzing({ onDone }: { onDone: () => void }) {
       const t = setTimeout(() => doneRef.current(), 300);
       return () => clearTimeout(t);
     }
+    // Progress through the lines (clamped) so it lands on "Found your type."
     const lineTimer = setInterval(
-      () => setLine((l) => (l + 1) % LINES.length),
+      () => setLine((l) => Math.min(l + 1, LINES.length - 1)),
       DURATION / LINES.length,
     );
     const numTimer = setInterval(() => setNum(Math.floor(Math.random() * 1000)), 60);
@@ -37,7 +42,10 @@ export function Analyzing({ onDone }: { onDone: () => void }) {
       clearInterval(numTimer);
       clearTimeout(finish);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const last = line === LINES.length - 1;
 
   return (
     <div className="flex min-h-[70vh] flex-col items-center justify-center text-center">
@@ -52,8 +60,13 @@ export function Analyzing({ onDone }: { onDone: () => void }) {
         {String(num).padStart(3, '0')}
       </div>
       <div className="h-6">
-        <p key={line} className="ir-fade-up font-mono text-sm text-text2">
-          {LINES[line]}…
+        <p
+          key={line}
+          className="ir-fade-up font-mono text-sm"
+          style={{ color: last ? 'var(--color-accent)' : 'var(--color-text2)' }}
+        >
+          {LINES[line]}
+          {last ? '' : '…'}
         </p>
       </div>
       <div className="mt-6 h-1 w-40 overflow-hidden rounded-full bg-line">
