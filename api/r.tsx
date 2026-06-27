@@ -1,7 +1,10 @@
 /**
  * Edge function for /r result links. Humans get the SPA shell (which reads the
  * query params and renders the card); crawlers get per-result og/twitter meta
- * pointing at the dynamic /api/og image, so links unfurl as the card (§6.3).
+ * so a shared result unfurls with personalized title + description.
+ *
+ * (No dynamic preview image: @vercel/og isn't supported in Edge Functions on a
+ * non-Next project, so we keep text unfurls and skip the generated card image.)
  */
 export const config = { runtime: 'edge' };
 
@@ -11,16 +14,14 @@ const esc = (s: string) =>
 export default async function handler(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const origin = url.origin;
-  const search = url.search; // includes leading "?"
   const sc = url.searchParams.get('sc') ?? '';
   const tier = url.searchParams.get('ti') ?? '';
   const pct = url.searchParams.get('pc') ?? '';
 
-  const ogImage = `${origin}/api/og${search}`;
   const title = `CALIBER — Strength Score ${sc}${tier ? ` · ${tier}` : ''}`;
   const desc = pct
-    ? `Stronger than ${pct}% of lifters. Age- & bodyweight-adjusted. Where do you rank?`
-    : 'Age- & bodyweight-adjusted strength ranking. Where do you rank?';
+    ? `Stronger than ${pct}% of lifters. Age- & bodyweight-adjusted. What's your Caliber?`
+    : "Age- & bodyweight-adjusted strength ranking. What's your Caliber?";
 
   // Pull the built SPA shell and swap in per-result social meta.
   let html = await fetch(`${origin}/index.html`).then((r) => r.text());
@@ -32,13 +33,9 @@ export default async function handler(req: Request): Promise<Response> {
     `<meta property="og:type" content="website" />`,
     `<meta property="og:title" content="${esc(title)}" />`,
     `<meta property="og:description" content="${esc(desc)}" />`,
-    `<meta property="og:image" content="${esc(ogImage)}" />`,
-    `<meta property="og:image:width" content="1200" />`,
-    `<meta property="og:image:height" content="630" />`,
-    `<meta name="twitter:card" content="summary_large_image" />`,
+    `<meta name="twitter:card" content="summary" />`,
     `<meta name="twitter:title" content="${esc(title)}" />`,
     `<meta name="twitter:description" content="${esc(desc)}" />`,
-    `<meta name="twitter:image" content="${esc(ogImage)}" />`,
   ].join('\n    ');
 
   html = html.replace('</head>', `    ${meta}\n  </head>`);
