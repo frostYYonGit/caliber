@@ -1,28 +1,36 @@
 import type { ReactNode } from 'react';
 import { useQuiz } from '../state/QuizContext';
 import { MAX_REPS, parseNum } from '../state/quizReducer';
-import { LIFT_BY_ID, TIER_COLOR, type LiftId } from '../data/standards';
+import { LIFT_BY_ID, TIER_COLOR, customName, isCustom, type LiftId } from '../data/standards';
 import { oneRM, scoreLift } from '../lib/scoring';
 import { formatWeight, toKg } from '../lib/units';
 
-/** Big weight input + reps stepper + live methodology readout (§3). */
+/** Big weight input + reps stepper + live readout (§3). Handles custom (logged,
+ *  unscored) lifts too — they accept a number but never affect the rank. */
 export function LiftCard({ id }: { id: LiftId }) {
   const { state, dispatch } = useQuiz();
-  const meta = LIFT_BY_ID[id];
+  const custom = isCustom(id);
+  const meta = custom ? null : LIFT_BY_ID[id];
   const draft = state.lifts[id]!;
+
+  const name = custom ? customName(id) : meta!.name;
+  const addedLoad = !custom && meta!.addedLoad;
+  const hint = custom ? 'logged · not ranked yet' : meta?.hint;
 
   const weightNum = parseNum(draft.weight);
   const bwKg = toKg(parseNum(state.bodyweight), state.unit);
-  const hasWeight =
-    Number.isFinite(weightNum) && (meta.addedLoad ? weightNum >= 0 : weightNum > 0);
-  const canScore = hasWeight && state.sex && bwKg > 0 && Number.isFinite(parseNum(state.age));
+  const hasWeight = Number.isFinite(weightNum) && (addedLoad ? weightNum >= 0 : weightNum > 0);
+  const canScore = !custom && hasWeight && state.sex && bwKg > 0 && Number.isFinite(parseNum(state.age));
 
   let readout: ReactNode = (
     <span className="text-textmut">
-      {meta.addedLoad ? 'Added weight over bodyweight' : 'Enter your best set'}
+      {custom
+        ? 'Logged — won’t affect your rank.'
+        : addedLoad
+          ? 'Added weight over bodyweight'
+          : 'Enter your best set'}
     </span>
   );
-  // Reaffirming, signal-true per-lift feedback (Edit B) — never shames a low number.
   let affirm: { text: string; cls: string } | null = null;
 
   if (canScore) {
@@ -66,22 +74,20 @@ export function LiftCard({ id }: { id: LiftId }) {
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
             <span className="font-mono text-sm font-bold uppercase tracking-wide text-text">
-              {meta.name}
+              {name}
             </span>
-            {!meta.scored && (
+            {custom && (
               <span className="font-mono rounded bg-raised px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-textmut">
-                tracked
+                not ranked
               </span>
             )}
           </div>
-          {meta.hint && (
-            <span className="font-mono text-[10px] uppercase tracking-wide text-textmut">
-              {meta.hint}
-            </span>
+          {hint && (
+            <span className="font-mono text-[10px] uppercase tracking-wide text-textmut">{hint}</span>
           )}
         </div>
         <button
-          aria-label={`Remove ${meta.name}`}
+          aria-label={`Remove ${name}`}
           onClick={() => dispatch({ type: 'REMOVE_LIFT', id })}
           className="-mt-1 rounded-md px-2 py-0.5 text-lg leading-none text-textmut transition-colors hover:text-accent"
         >
@@ -90,14 +96,13 @@ export function LiftCard({ id }: { id: LiftId }) {
       </div>
 
       <div className="mt-2.5 flex items-stretch gap-2.5">
-        {/* Big weight input */}
         <div className="flex flex-1 items-center rounded-xl border border-line bg-raised px-4 focus-within:border-accent">
           <input
             type="number"
             inputMode="decimal"
-            aria-label={`${meta.name} weight`}
+            aria-label={`${name} weight`}
             value={draft.weight}
-            placeholder={meta.addedLoad ? '0' : '—'}
+            placeholder={addedLoad ? '0' : '—'}
             onChange={(e) => dispatch({ type: 'SET_LIFT_WEIGHT', id, weight: e.target.value })}
             className="font-display w-full bg-transparent py-2.5 text-2xl font-extrabold text-text outline-none placeholder:text-textmut/40"
             style={{ minHeight: 50 }}
@@ -107,7 +112,6 @@ export function LiftCard({ id }: { id: LiftId }) {
           </span>
         </div>
 
-        {/* Reps stepper */}
         <div className="flex shrink-0 items-center rounded-xl border border-line bg-raised">
           <button
             aria-label="Fewer reps"

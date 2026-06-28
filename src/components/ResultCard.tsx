@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useState } from 'react';
 import { APP_NAME, HANDLE, TAGLINE, shareHost } from '../config';
-import { LIFT_BY_ID, POP_LABEL, TIER_COLOR, TIER_GLOW } from '../data/standards';
+import { LIFT_BY_ID, POP_LABEL, TIER_COLOR, TIER_GLOW, TIER_VERDICT, isCompound } from '../data/standards';
 import { ARCHETYPES, ARCHETYPE_SHOWCASE } from '../data/archetypes';
 import { telemetryLabel } from '../lib/classify';
 import { topPercent, type IronRankResult } from '../lib/result';
@@ -343,6 +343,12 @@ function TeaserHero({
 }) {
   const tier = result.composite.overallTier;
   const topLabel = topPercent(result.composite.overallPct);
+  // Which region is missing → tailor the upsell (never a gate, just a nudge).
+  const groups = new Set(
+    result.lifts.filter((l) => isCompound(l.id)).map((l) => LIFT_BY_ID[l.id].group),
+  );
+  const needLeg = !groups.has('lower');
+  const upsell = needLeg ? 'a leg lift' : 'a press or pull';
   return (
     <div className="relative mt-5 flex flex-col items-center text-center">
       <div
@@ -353,6 +359,10 @@ function TeaserHero({
       {/* Percentile verdict — the headline stat */}
       <p className="font-display relative text-5xl font-black capitalize leading-none" style={{ color }}>
         {topLabel}
+      </p>
+      {/* Tagline so the card is never a bare teaser (real tier verdict) */}
+      <p className="font-display relative mt-2 text-base font-extrabold tracking-tight" style={{ color }}>
+        {TIER_VERDICT[tier]}
       </p>
       <p className="relative mt-2 text-[13px] text-text2">
         stronger than <span className="font-bold text-text">{pct}%</span> of {sex}
@@ -369,11 +379,12 @@ function TeaserHero({
         <span className="font-mono text-[10px] uppercase tracking-wide text-textmut">{tier}</span>
       </div>
 
+      {/* Soft upsell — sharpens the read, never blocks it */}
       <p
         className="relative mt-3 rounded-lg px-3 py-2 text-[12px] text-text2"
         style={{ background: hexToRgba(color, 0.08), border: `1px solid ${hexToRgba(color, 0.35)}` }}
       >
-        Enter a press <span className="text-text">and</span> a pull to reveal your Lifter Type.
+        Add <span className="text-text">{upsell}</span> to reveal your Lifter Type.
       </p>
     </div>
   );

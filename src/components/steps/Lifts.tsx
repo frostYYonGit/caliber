@@ -6,7 +6,7 @@ export function Lifts() {
     <StepShell
       kicker="Step 3 · Your lifts"
       title="What can you lift?"
-      subtitle="Add whatever you train — the big three are pre-loaded but removable. Enter your best set; we estimate your 1RM live. One scored lift is enough to get ranked."
+      subtitle="Your lifts are pre-loaded — just type the weight. Search to add anything else. One lift is enough to get your card."
     >
       <LiftLibrary />
     </StepShell>
