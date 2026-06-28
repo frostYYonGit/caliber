@@ -99,10 +99,10 @@ user's highest-percentile lift so a mixed lifter always has an honest flex.
   <host>`, turning a screenshot into a findable invitation that recruits new
   users — the loop closing, not just the payoff.
 
-Set the app name and handle in [`src/config.ts`](src/config.ts). The share URL is
-**not hardcoded** — until a domain is owned, `shareHost()` prints the live deploy
-origin (`window.location.origin` / the request host in OG). Set `CANONICAL_ORIGIN`
-there once `caliber.app` (or similar) is actually purchased.
+Set the app name, handle, and canonical domain in [`src/config.ts`](src/config.ts).
+`CANONICAL_ORIGIN` is set to `https://caliberlifts.app`, so every card and copied
+link prints `caliberlifts.app` (it falls back to the live deploy origin only if
+ever unset).
 
 ## Onboarding (4 steps, value-first)
 

@@ -1,4 +1,4 @@
-import { TAGLINE } from '../config';
+import { APP_NAME } from '../config';
 import { PrimaryButton } from './ui';
 import { ARCHETYPES, ARCHETYPE_SHOWCASE } from '../data/archetypes';
 import { buildResult } from '../lib/result';
@@ -27,13 +27,17 @@ export function Intro({ onStart }: { onStart: () => void }) {
   return (
     <div className="flex min-h-dvh flex-col">
       <div className="flex flex-1 flex-col pt-8">
-        <p className="font-mono text-xs uppercase tracking-[0.3em] text-accent">Strength, typed.</p>
-        <h1 className="font-display mt-3 text-[2.7rem] font-black leading-[0.95] tracking-[-0.03em] text-text">
-          {TAGLINE}
+        <p className="font-display text-lg font-extrabold tracking-tight text-text">
+          {APP_NAME}
+          <span className="text-accent">.</span>
+        </p>
+        <p className="font-mono mt-4 text-xs uppercase tracking-[0.3em] text-accent">Strength, typed.</p>
+        <h1 className="font-display mt-2 text-[2.7rem] font-black leading-[0.97] tracking-[-0.03em] text-text">
+          What kind of lifter are you?
         </h1>
         <p className="mt-3 max-w-[24rem] text-[15px] leading-snug text-text2">
-          Enter your lifts. Get your Strength Score, your percentile, and your{' '}
-          <span className="text-text">lifter type</span> — on one card built to post.
+          Enter your lifts. Get your <span className="text-text">type</span>, your rank, and the
+          card to prove it.
         </p>
 
         {/* Visual proof — a real sample card, peeking */}

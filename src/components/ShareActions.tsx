@@ -2,6 +2,7 @@ import { useRef, useState, type RefObject } from 'react';
 import { toPng } from 'html-to-image';
 import type { IronRankResult } from '../lib/result';
 import { resultUrl } from '../lib/share';
+import { shareOrigin } from '../config';
 import { StoryCard } from './StoryCard';
 
 type Busy = null | 'png' | 'link' | 'story';
@@ -70,7 +71,7 @@ export function ShareActions({
   const copyLink = async () => {
     setBusy('link');
     try {
-      const url = resultUrl(result, window.location.origin);
+      const url = resultUrl(result, shareOrigin() || window.location.origin);
       await navigator.clipboard.writeText(url);
       flash('Link copied ✓');
     } catch {

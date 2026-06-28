@@ -3,17 +3,16 @@
  * that travels with every card — change them here once a domain is owned.
  */
 export const APP_NAME = 'CALIBER';
-export const HANDLE = '@caliber';
+export const HANDLE = '@caliberlifts';
 
 /** Big, screenshot-friendly headline — the brand is the question. */
 export const TAGLINE = "What's your Caliber?";
 
 /**
- * Canonical public origin (e.g. "https://caliber.app"). Leave null until a
- * domain is actually owned — cards then fall back to the live deploy origin so
- * we never print a URL we don't control.
+ * Canonical public origin. The owned domain — every card/link prints this
+ * (falls back to the live deploy origin only if ever unset).
  */
-export const CANONICAL_ORIGIN: string | null = null;
+export const CANONICAL_ORIGIN: string | null = 'https://caliberlifts.app';
 
 /** The origin to build share links against (canonical if set, else live). */
 export function shareOrigin(): string {
@@ -22,7 +21,7 @@ export function shareOrigin(): string {
   return '';
 }
 
-/** Host only, for printing on the card ("caliber.app" / "caliber.netlify.app"). */
+/** Host only, for printing on the card (e.g. "caliberlifts.app"). */
 export function shareHost(): string {
   return shareOrigin().replace(/^https?:\/\//, '');
 }

@@ -8,20 +8,41 @@
  */
 export const config = { runtime: 'edge' };
 
+// id -> display name (kept in sync with src/data/archetypes.ts).
+const ARCH_NAME: Record<string, string> = {
+  prospect: 'Prospect',
+  powerbuilder: 'Powerbuilder',
+  mirror_athlete: 'Mirror Athlete',
+  glass_cannon: 'Glass Cannon',
+  the_mule: 'The Mule',
+  different_breed: 'Different Breed',
+  deadlift_demon: 'Deadlift Demon',
+  squat_monster: 'Squat Monster',
+  bench_boss: 'Bench Boss',
+  press_machine: 'Press Machine',
+};
+
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
 export default async function handler(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const origin = url.origin;
-  const sc = url.searchParams.get('sc') ?? '';
-  const tier = url.searchParams.get('ti') ?? '';
-  const pct = url.searchParams.get('pc') ?? '';
+  const pct = Number(url.searchParams.get('pc'));
+  const archName = ARCH_NAME[url.searchParams.get('ar') ?? ''] ?? null;
+  const top = Number.isFinite(pct) ? Math.max(0.1, 100 - pct) : null;
+  const topLabel = top !== null ? `Top ${top >= 10 ? Math.round(top) : top.toFixed(1)}%` : null;
 
-  const title = `CALIBER — Strength Score ${sc}${tier ? ` · ${tier}` : ''}`;
-  const desc = pct
+  // Lead with identity + percentile, not the raw score.
+  const title = archName
+    ? `${archName}${topLabel ? ` · ${topLabel}` : ''} — CALIBER`
+    : topLabel
+      ? `${topLabel} lifter — CALIBER`
+      : 'CALIBER — What kind of lifter are you?';
+  const desc = Number.isFinite(pct)
     ? `Stronger than ${pct}% of lifters. Age- & bodyweight-adjusted. What's your Caliber?`
-    : "Age- & bodyweight-adjusted strength ranking. What's your Caliber?";
+    : "Find your lifter type and your rank. What's your Caliber?";
+  const canonical = `https://caliberlifts.app/r${url.search}`;
 
   // Pull the built SPA shell and swap in per-result social meta.
   let html = await fetch(`${origin}/index.html`).then((r) => r.text());
@@ -31,6 +52,8 @@ export default async function handler(req: Request): Promise<Response> {
 
   const meta = [
     `<meta property="og:type" content="website" />`,
+    `<meta property="og:site_name" content="CALIBER" />`,
+    `<meta property="og:url" content="${esc(canonical)}" />`,
     `<meta property="og:title" content="${esc(title)}" />`,
     `<meta property="og:description" content="${esc(desc)}" />`,
     `<meta name="twitter:card" content="summary" />`,

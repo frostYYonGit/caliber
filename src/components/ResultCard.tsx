@@ -170,40 +170,46 @@ export const ResultCard = forwardRef<HTMLDivElement, Props>(function ResultCard(
               </span>
             </div>
 
-            {/* Telemetry */}
-            <p className="font-mono relative mt-3 text-[11px] uppercase tracking-[0.18em] text-textmut">
-              {telemetryLabel(archetype!, arch.telemetry)} · {tier} · {topTxt}
-            </p>
-            {/* Rarity */}
-            <p className="relative mt-2 text-[13px] text-text2">{arch.rarity}</p>
-            {/* Tagline */}
-            <p className="font-display relative mt-3 text-xl font-extrabold tracking-tight" style={{ color }}>
+            {/* Tagline — prominent, part of the share unit */}
+            <p className="font-display relative mt-2 text-xl font-extrabold tracking-tight" style={{ color }}>
               {arch.tagline}
+            </p>
+
+            {/* Percentile verdict — THE headline stat (replaces the raw score) */}
+            <p className="font-display relative mt-4 text-2xl font-black capitalize" style={{ color }}>
+              {topTxt.toLowerCase()}
+            </p>
+            <p className="relative mt-1 text-[13px] text-text2">
+              stronger than <span className="font-bold text-text">{pct}%</span> of {sexPhrase(result)}
+            </p>
+
+            {/* Trust badge — answer "is this fake?" before they scroll */}
+            <p className="font-mono relative mt-2 text-[10px] uppercase tracking-wide text-textmut">
+              {dots ? 'Based on DOTS + age-adjusted percentile' : 'Epley 1RM · age & bodyweight adjusted'}
             </p>
           </div>
 
-          {/* Supporting stat row — score demoted but still molten */}
-          <div className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-line bg-raised/40 px-3 py-2">
-            <span className="font-mono text-[11px] uppercase tracking-wide text-textmut">
-              Strength Score
-            </span>
-            <span className="font-display text-lg font-black tabular-nums" style={{ color }}>
-              {score}
+          {/* Secondary stat strip — score / tier / DOTS demoted, present but quiet */}
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-xl border border-line px-3 py-2"
+            style={{ background: hexToRgba(color, 0.05) }}>
+            <span className="font-mono text-[10px] uppercase tracking-wide text-textmut">
+              {telemetryLabel(archetype!, arch.telemetry)}
             </span>
             <span className="text-line">·</span>
-            <span className="font-mono text-[11px] font-bold uppercase" style={{ color: TIER_COLOR[tier] }}>
-              {tier}
-            </span>
+            <span className="font-mono text-[10px] uppercase tracking-wide text-textmut">Score {score}</span>
+            <span className="text-line">·</span>
+            <span className="font-mono text-[10px] uppercase tracking-wide text-textmut">{tier}</span>
             {dots && (
               <>
                 <span className="text-line">·</span>
-                <span className="font-mono text-[11px] text-text2">DOTS {Math.round(dots.score)}</span>
+                <span className="font-mono text-[10px] uppercase tracking-wide text-textmut">DOTS {Math.round(dots.score)}</span>
               </>
             )}
           </div>
 
-          {/* Description */}
-          <p className="mt-4 text-center text-[13px] leading-relaxed text-text2">
+          {/* Rarity + description (secondary) */}
+          <p className="mt-3 text-center text-[12px] text-textmut">{arch.rarity}</p>
+          <p className="mt-2 text-center text-[13px] leading-relaxed text-text2">
             {arch.description}
           </p>
 
@@ -336,32 +342,35 @@ function TeaserHero({
   pct: number;
 }) {
   const tier = result.composite.overallTier;
+  const topLabel = topPercent(result.composite.overallPct);
   return (
-    <div className="relative mt-3 flex flex-col items-center text-center">
-      <span
-        className="font-display inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-extrabold uppercase tracking-wider"
-        style={{ color, background: hexToRgba(color, 0.14), border: `1px solid ${hexToRgba(color, 0.55)}` }}
-      >
-        ★ {tier}
-      </span>
-      <div className="relative mt-2 flex flex-col items-center">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute"
-          style={{ width: 360, height: 220, top: -20, background: `radial-gradient(circle at center, ${hexToRgba(color, glow)} 0%, transparent 66%)` }}
-        />
-        <div className="font-display relative font-black tabular-nums leading-none" style={{ fontSize: 104, color, letterSpacing: '-0.05em' }}>
-          {score}
-        </div>
-        <p className="font-mono relative mt-1 text-[11px] uppercase tracking-[0.3em] text-textmut">
-          Strength Score / 1000
-        </p>
-      </div>
-      <p className="mt-3 text-center text-[13px] text-text2">
-        Stronger than <span className="font-bold" style={{ color }}>{pct}%</span> of {sex}
+    <div className="relative mt-5 flex flex-col items-center text-center">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute"
+        style={{ width: 360, height: 220, top: -20, background: `radial-gradient(circle at center, ${hexToRgba(color, glow)} 0%, transparent 66%)` }}
+      />
+      {/* Percentile verdict — the headline stat */}
+      <p className="font-display relative text-5xl font-black capitalize leading-none" style={{ color }}>
+        {topLabel}
       </p>
+      <p className="relative mt-2 text-[13px] text-text2">
+        stronger than <span className="font-bold text-text">{pct}%</span> of {sex}
+      </p>
+      <p className="font-mono relative mt-2 text-[10px] uppercase tracking-wide text-textmut">
+        {result.dots ? 'Based on DOTS + age-adjusted percentile' : 'Epley 1RM · age & bodyweight adjusted'}
+      </p>
+
+      {/* Secondary strip — score / tier demoted */}
+      <div className="relative mt-3 flex items-center gap-2 rounded-xl border border-line px-3 py-2"
+        style={{ background: hexToRgba(color, 0.05) }}>
+        <span className="font-mono text-[10px] uppercase tracking-wide text-textmut">Score {score}</span>
+        <span className="text-line">·</span>
+        <span className="font-mono text-[10px] uppercase tracking-wide text-textmut">{tier}</span>
+      </div>
+
       <p
-        className="mt-3 rounded-lg px-3 py-2 text-[12px] text-text2"
+        className="relative mt-3 rounded-lg px-3 py-2 text-[12px] text-text2"
         style={{ background: hexToRgba(color, 0.08), border: `1px solid ${hexToRgba(color, 0.35)}` }}
       >
         Enter a press <span className="text-text">and</span> a pull to reveal your Lifter Type.
