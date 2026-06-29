@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { QuizProvider } from './state/QuizContext';
 import { Home } from './routes/Home';
 import { Result } from './routes/Result';
@@ -20,10 +21,16 @@ export default function App() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
-  if (route === 'result') return <Result />;
   return (
-    <QuizProvider>
-      <Home />
-    </QuizProvider>
+    <>
+      {route === 'result' ? (
+        <Result />
+      ) : (
+        <QuizProvider>
+          <Home />
+        </QuizProvider>
+      )}
+      <Analytics />
+    </>
   );
 }
