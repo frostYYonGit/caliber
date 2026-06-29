@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { QuizProvider } from './state/QuizContext';
 import { Home } from './routes/Home';
 import { Result } from './routes/Result';
@@ -31,6 +32,7 @@ export default function App() {
         </QuizProvider>
       )}
       <Analytics />
+      <SpeedInsights />
     </>
   );
 }
