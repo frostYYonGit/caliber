@@ -178,14 +178,9 @@ export const LIFT_BY_ID: Record<LiftId, LiftMeta> = Object.fromEntries(
   LIFTS.map((l) => [l.id, l]),
 );
 
-/** Preloaded defaults — the lifts a normal gym-goer recognizes, BENCH FIRST. */
-export const DEFAULT_LIFTS: LiftId[] = [
-  'bench_press',
-  'lat_pulldown',
-  'leg_press',
-  'dumbbell_shoulder_press',
-  'back_squat',
-];
+/** Preloaded defaults — recognizable everyday lifts, BENCH FIRST. Three so the
+ *  all-expanded stack stays short; covers an upper + lower for the type read. */
+export const DEFAULT_LIFTS: LiftId[] = ['bench_press', 'lat_pulldown', 'leg_press'];
 
 export const LIFTS_BY_BODY_PART: Record<BodyPart, LiftMeta[]> = Object.fromEntries(
   BODY_PART_ORDER.map((bp) => [bp, LIFTS.filter((l) => l.bodyPart === bp)]),

@@ -222,7 +222,7 @@ export function LiftLibrary() {
                         {lifts.map((l) => (
                           <button
                             key={l.id}
-                            onClick={() => dispatch({ type: 'ADD_LIFT', id: l.id })}
+                            onClick={() => add(l.id)}
                             className="flex items-center justify-between gap-1 rounded-lg border border-line bg-raised px-3 py-2.5 text-left text-[13px] font-medium text-text2 transition-colors hover:border-accent hover:text-text"
                           >
                             <span>{l.name}</span>

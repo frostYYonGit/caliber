@@ -1,12 +1,20 @@
 import type { ReactNode } from 'react';
 import { useQuiz } from '../state/QuizContext';
-import { MAX_REPS, parseNum } from '../state/quizReducer';
+import { MAX_REPS, isLiftEntered, parseNum } from '../state/quizReducer';
 import { LIFT_BY_ID, TIER_COLOR, customName, isCustom, type LiftId } from '../data/standards';
 import { oneRM, scoreLift } from '../lib/scoring';
-import { formatWeight, toKg } from '../lib/units';
+import { formatWeight, fromKg, toKg, type Unit } from '../lib/units';
+import { trackEvent, trackEventOnce } from '../lib/analytics';
 
-/** Big weight input + reps stepper + live readout (§3). Handles custom (logged,
- *  unscored) lifts too — they accept a number but never affect the rank. */
+/** Sample placeholder number so the field reads as typeable, sized to the lift. */
+function placeholder(unit: Unit, addedLoad: boolean, perHand: boolean): string {
+  if (addedLoad) return unit === 'kg' ? '20' : '45';
+  if (perHand) return unit === 'kg' ? '20' : '45';
+  return unit === 'kg' ? '60' : '135';
+}
+
+/** Always-expanded weight input + reps stepper + live readout (§3). Custom
+ *  (logged, unscored) lifts accept a number but never affect the rank. */
 export function LiftCard({ id }: { id: LiftId }) {
   const { state, dispatch } = useQuiz();
   const custom = isCustom(id);
@@ -15,6 +23,7 @@ export function LiftCard({ id }: { id: LiftId }) {
 
   const name = custom ? customName(id) : meta!.name;
   const addedLoad = !custom && meta!.addedLoad;
+  const perHand = !custom && !!meta!.perHand;
   const hint = custom ? 'logged · not ranked yet' : meta?.hint;
 
   const weightNum = parseNum(draft.weight);
@@ -22,60 +31,70 @@ export function LiftCard({ id }: { id: LiftId }) {
   const hasWeight = Number.isFinite(weightNum) && (addedLoad ? weightNum >= 0 : weightNum > 0);
   const canScore = !custom && hasWeight && state.sex && bwKg > 0 && Number.isFinite(parseNum(state.age));
 
-  let readout: ReactNode = (
-    <span className="text-textmut">
-      {custom
-        ? 'Logged — won’t affect your rank.'
-        : addedLoad
-          ? 'Added weight over bodyweight'
-          : 'Enter your best set'}
-    </span>
-  );
-  let affirm: { text: string; cls: string } | null = null;
-
+  let readout: ReactNode = null;
   if (canScore) {
     const weightKg = toKg(weightNum, state.unit);
     const est1rm = oneRM(weightKg, draft.reps);
     const ratio = est1rm / bwKg;
     const res = scoreLift(
       { id, weightKg, reps: draft.reps },
-      {
-        sex: state.sex!,
-        age: parseNum(state.age),
-        bodyweightKg: bwKg,
-        population: state.population,
-      },
+      { sex: state.sex!, age: parseNum(state.age), bodyweightKg: bwKg, population: state.population },
     );
-    readout = (
-      <span className="text-text2">
-        ≈ <span className="text-text">{formatWeight(est1rm, state.unit)}</span> 1RM
-        <span className="mx-1.5 text-line">·</span>
-        {ratio.toFixed(2)}× BW
-        <span className="mx-1.5 text-line">·</span>
-        <span style={{ color: TIER_COLOR[res.tier] }} className="font-semibold">
-          {res.tier}
-        </span>
-      </span>
-    );
-    affirm =
+    const affirm =
       res.percentile >= 80
         ? { text: 'Strong number — top of the pack.', cls: 'text-accent' }
         : res.percentile >= 40
           ? { text: 'Solid. Right in the mix.', cls: 'text-text2' }
           : { text: 'Logged. That’s your baseline to beat.', cls: 'text-textmut' };
+    readout = (
+      <>
+        <p className="font-mono mt-2.5 text-[13px] text-text2">
+          ≈ <span className="text-text">{formatWeight(est1rm, state.unit)}</span> 1RM
+          <span className="mx-1.5 text-line">·</span>
+          {ratio.toFixed(2)}× BW
+          <span className="mx-1.5 text-line">·</span>
+          <span style={{ color: TIER_COLOR[res.tier] }} className="font-semibold">
+            {res.tier}
+          </span>
+        </p>
+        <p className={`mt-1 text-[12px] ${affirm.cls}`}>{affirm.text}</p>
+      </>
+    );
+  } else if (custom) {
+    readout = <p className="font-mono mt-2.5 text-[13px] text-textmut">Logged — won’t affect your rank.</p>;
   }
 
   const setReps = (delta: number) =>
     dispatch({ type: 'SET_LIFT_REPS', id, reps: draft.reps + delta });
+
+  // Funnel events on a committed (valid) entry — first_lift_entered fires once.
+  const fireLiftEvent = () => {
+    if (!canScore) return;
+    const weightKg = toKg(weightNum, state.unit);
+    const est1rm = oneRM(weightKg, draft.reps);
+    const props = {
+      lift_name: name,
+      weight: weightNum,
+      reps: draft.reps,
+      estimated_1rm: Math.round(fromKg(est1rm, state.unit)),
+      bodyweight_ratio: +(est1rm / bwKg).toFixed(2),
+    };
+    trackEventOnce('first_lift', 'first_lift_entered', props);
+    trackEvent('lift_added_or_updated', {
+      ...props,
+      lift_category: meta?.bodyPart,
+      total_valid_lifts: state.order.filter(
+        (lid) => LIFT_BY_ID[lid] && isLiftEntered(lid, state.lifts[lid]),
+      ).length,
+    });
+  };
 
   return (
     <div className="rounded-2xl border border-line bg-surface p-3.5">
       <div className="flex items-start justify-between">
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-sm font-bold uppercase tracking-wide text-text">
-              {name}
-            </span>
+            <span className="font-mono text-sm font-bold uppercase tracking-wide text-text">{name}</span>
             {custom && (
               <span className="font-mono rounded bg-raised px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-textmut">
                 not ranked
@@ -102,9 +121,10 @@ export function LiftCard({ id }: { id: LiftId }) {
             inputMode="decimal"
             aria-label={`${name} weight`}
             value={draft.weight}
-            placeholder={addedLoad ? '0' : '—'}
+            placeholder={placeholder(state.unit, addedLoad, perHand)}
             onChange={(e) => dispatch({ type: 'SET_LIFT_WEIGHT', id, weight: e.target.value })}
-            className="font-display w-full bg-transparent py-2.5 text-2xl font-extrabold text-text outline-none placeholder:text-textmut/40"
+            onBlur={fireLiftEvent}
+            className="font-display w-full bg-transparent py-2.5 text-2xl font-extrabold text-text caret-accent outline-none placeholder:text-textmut/40"
             style={{ minHeight: 50 }}
           />
           <span className="font-mono ml-2 shrink-0 text-sm font-bold uppercase text-textmut">
@@ -122,9 +142,7 @@ export function LiftCard({ id }: { id: LiftId }) {
             −
           </button>
           <div className="flex w-12 flex-col items-center justify-center px-1">
-            <span className="font-display text-xl font-extrabold leading-none text-text">
-              {draft.reps}
-            </span>
+            <span className="font-display text-xl font-extrabold leading-none text-text">{draft.reps}</span>
             <span className="font-mono mt-0.5 text-[10px] uppercase text-textmut">reps</span>
           </div>
           <button
@@ -138,8 +156,7 @@ export function LiftCard({ id }: { id: LiftId }) {
         </div>
       </div>
 
-      <p className="font-mono mt-2.5 text-[13px]">{readout}</p>
-      {affirm && <p className={`mt-1 text-[12px] ${affirm.cls}`}>{affirm.text}</p>}
+      {readout}
     </div>
   );
 }

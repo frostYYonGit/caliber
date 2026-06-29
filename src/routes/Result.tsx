@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { decodeResult } from '../lib/share';
 import { ResultView } from '../components/ResultView';
 import { Shell } from './Home';
 import { PrimaryButton } from '../components/ui';
 import { APP_NAME, TAGLINE } from '../config';
+import { trackEvent, resultEventProps } from '../lib/analytics';
 
 /** Reads URL params and renders the card directly — skips onboarding (§6.2). */
 export function Result() {
@@ -11,6 +12,15 @@ export function Result() {
     () => decodeResult(new URLSearchParams(window.location.search)),
     [],
   );
+
+  // Fire result_generated once for a shared-link landing (not per re-render).
+  const fired = useRef(false);
+  useEffect(() => {
+    if (result && !fired.current) {
+      fired.current = true;
+      trackEvent('result_generated', { ...resultEventProps(result), source: 'shared_link' });
+    }
+  }, [result]);
 
   const goHome = () => {
     window.history.pushState({}, '', '/');

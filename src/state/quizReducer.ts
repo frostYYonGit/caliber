@@ -32,7 +32,7 @@ export const initialState: QuizState = {
   bodyweight: '',
   population: 'gym', // sensible default for cold, curious traffic
   order: [...DEFAULT_LIFTS],
-  lifts: Object.fromEntries(DEFAULT_LIFTS.map((id) => [id, { weight: '', reps: 1 }])),
+  lifts: Object.fromEntries(DEFAULT_LIFTS.map((id) => [id, { weight: '', reps: 5 }])),
 };
 
 export type Action =
@@ -67,7 +67,7 @@ export function quizReducer(state: QuizState, action: Action): QuizState {
       return {
         ...state,
         order: [...state.order, action.id],
-        lifts: { ...state.lifts, [action.id]: { weight: '', reps: 1 } },
+        lifts: { ...state.lifts, [action.id]: { weight: '', reps: 5 } },
       };
     }
     case 'REMOVE_LIFT': {

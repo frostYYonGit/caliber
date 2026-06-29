@@ -3,6 +3,7 @@ import { toPng } from 'html-to-image';
 import type { IronRankResult } from '../lib/result';
 import { resultUrl } from '../lib/share';
 import { shareOrigin } from '../config';
+import { trackEvent, shareEventProps } from '../lib/analytics';
 import { StoryCard } from './StoryCard';
 
 type Busy = null | 'png' | 'link' | 'story';
@@ -42,6 +43,7 @@ export function ShareActions({
 
   const savePng = async () => {
     if (!cardRef.current) return;
+    trackEvent('save_card_clicked', shareEventProps(result));
     setBusy('png');
     try {
       const url = await nodeToPng(cardRef.current, 2);
@@ -56,6 +58,7 @@ export function ShareActions({
 
   const saveStory = async () => {
     if (!storyRef.current) return;
+    trackEvent('story_clicked', shareEventProps(result));
     setBusy('story');
     try {
       const url = await nodeToPng(storyRef.current, 1);
@@ -72,6 +75,7 @@ export function ShareActions({
     setBusy('link');
     try {
       const url = resultUrl(result, shareOrigin() || window.location.origin);
+      trackEvent('copy_link_clicked', { ...shareEventProps(result), result_url_exists: !!url });
       await navigator.clipboard.writeText(url);
       flash('Link copied ✓');
     } catch {

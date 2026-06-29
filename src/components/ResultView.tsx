@@ -1,5 +1,7 @@
 import { useRef } from 'react';
 import type { IronRankResult } from '../lib/result';
+import { ARCHETYPES } from '../data/archetypes';
+import { trackEvent } from '../lib/analytics';
 import { ResultCard } from './ResultCard';
 import { ShareActions } from './ShareActions';
 
@@ -14,6 +16,14 @@ export function ResultView({
   animate?: boolean;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
+
+  const rankAgain = () => {
+    trackEvent('rank_again_clicked', {
+      previous_archetype: result.archetype ? ARCHETYPES[result.archetype.id].name : 'none',
+      previous_strength_score: result.composite.strengthScore,
+    });
+    onStartOver();
+  };
 
   return (
     <div className="flex w-full flex-col items-center gap-5">
@@ -44,7 +54,7 @@ export function ResultView({
       </details>
 
       <button
-        onClick={onStartOver}
+        onClick={rankAgain}
         className="font-mono text-sm text-textmut underline-offset-4 transition-colors hover:text-text hover:underline"
       >
         ↺ Rank yourself again

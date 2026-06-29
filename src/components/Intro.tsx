@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { APP_NAME } from '../config';
 import { PrimaryButton } from './ui';
 import { ARCHETYPES, ARCHETYPE_SHOWCASE } from '../data/archetypes';
 import { buildResult } from '../lib/result';
+import { trackEvent } from '../lib/analytics';
 import { ResultCard } from './ResultCard';
 
 /** A real rendered sample card (Powerbuilder) — show the payoff, don't describe it. */
@@ -24,6 +26,18 @@ const MORE = ARCHETYPE_SHOWCASE.length - CHIPS.length;
 
 /** Value-first landing (Edit 4) — identity hook, with the score as credibility. */
 export function Intro({ onStart }: { onStart: () => void }) {
+  useEffect(() => {
+    trackEvent('homepage_view', {
+      path: window.location.pathname,
+      referrer: document.referrer || undefined,
+    });
+  }, []);
+
+  const start = () => {
+    trackEvent('clicked_find_your_type', { path: window.location.pathname, cta_location: 'hero' });
+    onStart();
+  };
+
   return (
     <div className="flex min-h-dvh flex-col">
       <div className="flex flex-1 flex-col pt-8">
@@ -80,7 +94,7 @@ export function Intro({ onStart }: { onStart: () => void }) {
       </div>
 
       <div className="sticky bottom-0 -mx-5 border-t border-line bg-bg px-5 pb-6 pt-4">
-        <PrimaryButton onClick={onStart}>Find your type →</PrimaryButton>
+        <PrimaryButton onClick={start}>Find your type →</PrimaryButton>
         <p className="font-mono mt-3 text-center text-[11px] uppercase tracking-wide text-textmut">
           No signup · ~60 seconds · free
         </p>

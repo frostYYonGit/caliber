@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useQuiz } from '../state/QuizContext';
-import { isStepValid, STEP_COUNT } from '../state/quizReducer';
+import { isStepValid, parseNum, STEP_COUNT } from '../state/quizReducer';
+import { trackEvent, resultEventProps } from '../lib/analytics';
 import { Progress } from '../components/Progress';
 import { PrimaryButton, GhostButton } from '../components/ui';
 import { SexUnits } from '../components/steps/SexUnits';
@@ -15,6 +16,7 @@ import { buildResult, resolveQuiz, type IronRankResult } from '../lib/result';
 import { resultPath } from '../lib/share';
 
 const STEP_COMPONENTS = [SexUnits, AgeWeight, Lifts, Population];
+const STEP_NAMES = ['sex_units', 'age_bodyweight', 'lifts', 'compare'];
 
 type Phase = 'intro' | 'quiz' | 'analyzing' | 'result';
 
@@ -27,8 +29,30 @@ export function Home() {
   const isLast = state.step === STEP_COUNT - 1;
   const StepComp = STEP_COMPONENTS[state.step];
 
+  const quizProps = () => ({
+    units: state.unit,
+    sex: state.sex ?? undefined,
+    age: Number.isFinite(parseNum(state.age)) ? parseNum(state.age) : undefined,
+    bodyweight: Number.isFinite(parseNum(state.bodyweight)) ? parseNum(state.bodyweight) : undefined,
+    comparison_population: state.population,
+  });
+
+  const startQuiz = () => {
+    trackEvent('onboarding_started', {
+      starting_step: STEP_NAMES[0],
+      units: state.unit,
+      comparison_population: state.population,
+    });
+    setPhase('quiz');
+  };
+
   const onContinue = () => {
     if (!valid) return;
+    trackEvent('step_completed', {
+      step_name: STEP_NAMES[state.step],
+      step_index: state.step,
+      ...quizProps(),
+    });
     if (isLast) {
       setPhase('analyzing');
     } else {
@@ -44,6 +68,8 @@ export function Home() {
     }
     const r = buildResult(input);
     setResult(r);
+    // result_generated fires once here (on generation), not on card re-render.
+    trackEvent('result_generated', { ...resultEventProps(r), source: 'self' });
     // Update URL so the result is shareable / refresh-safe (§6.2).
     window.history.pushState({}, '', resultPath(r));
     setPhase('result');
@@ -61,7 +87,7 @@ export function Home() {
   if (phase === 'intro') {
     return (
       <Shell>
-        <Intro onStart={() => setPhase('quiz')} />
+        <Intro onStart={startQuiz} />
       </Shell>
     );
   }
