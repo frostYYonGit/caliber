@@ -118,7 +118,9 @@ export function initAnalytics(): void {
     posthog.init(key, {
       api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
       capture_pageview: true,
+      capture_pageleave: true, // bounce rate / session duration
       autocapture: true,
+      capture_performance: { web_vitals: true }, // $web_vitals (LCP, INP, CLS)
     });
     phReady = true;
     // Attach attribution + session to every PostHog event (incl. autocaptured).
