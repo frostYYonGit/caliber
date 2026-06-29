@@ -86,7 +86,7 @@ export function ShareActions({
   };
 
   const btn =
-    'flex items-center justify-center gap-2 rounded-xl border px-3 py-3 text-sm font-semibold transition-colors disabled:opacity-50';
+    'flex items-center justify-center gap-1.5 rounded-xl border px-3 py-3.5 text-[15px] font-bold transition-colors disabled:opacity-50';
 
   return (
     <div className="w-full">

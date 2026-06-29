@@ -26,7 +26,7 @@ import {
   type RankUp,
   type ScoreContext,
 } from './scoring';
-import { toKg, type Unit } from './units';
+import { fromKg, roundWeight, toKg, type Unit } from './units';
 import { classify, type Classification } from './classify';
 import { isLiftEntered, parseNum, type QuizState } from '../state/quizReducer';
 
@@ -149,6 +149,14 @@ export function buildResult(input: ResolvedInput): IronRankResult {
     archetype: classify(lifts, composite.overallPct),
     ageAdjusted: input.age < PEAK_LO || input.age > PEAK_HI,
   };
+}
+
+/** Formatted closest rank-up line, e.g. "+8KG Bench → Elite". Null if none. */
+export function rankUpLabel(result: IronRankResult): string | null {
+  const { rankUp, input } = result;
+  if (!rankUp) return null;
+  const delta = Math.ceil(roundWeight(fromKg(rankUp.deltaKg, input.unit), input.unit));
+  return `+${delta}${input.unit.toUpperCase()} ${LIFT_BY_ID[rankUp.id].short} → ${rankUp.nextTier}`;
 }
 
 /** "stronger than X%" -> "top Y%" (the flex framing). */

@@ -1,8 +1,7 @@
 import { forwardRef, useEffect, useState } from 'react';
 import { APP_NAME, HANDLE, TAGLINE, shareHost } from '../config';
-import { LIFT_BY_ID, POP_LABEL, TIER_COLOR, TIER_GLOW, TIER_VERDICT, isCompound } from '../data/standards';
+import { LIFT_BY_ID, TIER_COLOR, TIER_GLOW, TIER_VERDICT, isCompound } from '../data/standards';
 import { ARCHETYPES, ARCHETYPE_SHOWCASE } from '../data/archetypes';
-import { telemetryLabel } from '../lib/classify';
 import { topPercent, type IronRankResult } from '../lib/result';
 import { fromKg, roundWeight } from '../lib/units';
 
@@ -60,7 +59,7 @@ export const ResultCard = forwardRef<HTMLDivElement, Props>(function ResultCard(
   { result, animate = true },
   ref,
 ) {
-  const { composite, input, dots, rankUp, lifts, tracked, archetype, ageAdjusted } = result;
+  const { composite, input, dots, lifts, tracked, archetype } = result;
   const tier = composite.overallTier;
   const arch = archetype ? ARCHETYPES[archetype.id] : null;
   const color = arch ? arch.color : TIER_COLOR[tier];
@@ -97,12 +96,9 @@ export const ResultCard = forwardRef<HTMLDivElement, Props>(function ResultCard(
 
   // Headline sizing: long single words ("POWERBUILDER") can't wrap, so shrink.
   const displayName = arch ? (settled ? arch.name : ROLL[rollIdx % ROLL.length]) : '';
+  // Sized to the longest unwrappable word so "POWERBUILDER" never clips.
   const longestWord = displayName ? Math.max(...displayName.split(' ').map((w) => w.length)) : 0;
-  const nameSize = longestWord >= 9 ? 33 : 40;
-
-  const rankUpText = rankUp
-    ? `+${Math.ceil(roundWeight(fromKg(rankUp.deltaKg, input.unit), input.unit))}${input.unit.toUpperCase()} ${LIFT_BY_ID[rankUp.id].short} → ${rankUp.nextTier}`
-    : null;
+  const nameSize = longestWord >= 11 ? 33 : longestWord >= 9 ? 40 : 48;
 
   return (
     <div
@@ -135,96 +131,63 @@ export const ResultCard = forwardRef<HTMLDivElement, Props>(function ResultCard(
 
       {arch ? (
         <>
-          {/* Glow behind the identity */}
-          <div className="relative mt-6 flex flex-col items-center text-center">
+          {/* Hero identity — name, tagline, percentile dominate; whitespace isolates it */}
+          <div className="relative mt-7 mb-2 flex flex-col items-center text-center">
             <div
               aria-hidden
               className="pointer-events-none absolute"
               style={{
-                width: 380,
-                height: 220,
-                top: -20,
+                width: 392,
+                height: 250,
+                top: -24,
                 background: `radial-gradient(circle at center, ${hexToRgba(color, glow)} 0%, transparent 66%)`,
               }}
             />
-            {/* Archetype headline — the hero */}
-            <div
-              className="relative flex items-center justify-center gap-2"
-              style={{ minHeight: 56 }}
-            >
+            {/* Archetype headline — the visual hero */}
+            <div className="relative flex items-center justify-center gap-2.5" style={{ minHeight: 60 }}>
               {settled && (
-                <span style={{ color, fontSize: 30, fontFamily: 'system-ui, sans-serif' }}>
-                  {arch.icon}
-                </span>
+                <span style={{ color, fontSize: 36, fontFamily: 'system-ui, sans-serif' }}>{arch.icon}</span>
               )}
               <span
                 key={settled ? 'final' : rollIdx}
-                className={`font-display text-center font-black uppercase leading-[0.95] ${settled ? 'ir-stamp' : ''}`}
-                style={{
-                  fontSize: nameSize,
-                  letterSpacing: '-0.02em',
-                  color: settled ? color : 'var(--color-text2)',
-                }}
+                className={`font-display text-center font-black uppercase leading-[0.92] ${settled ? 'ir-stamp' : ''}`}
+                style={{ fontSize: nameSize, letterSpacing: '-0.02em', color: settled ? color : 'var(--color-text2)' }}
               >
                 {displayName}
               </span>
             </div>
 
-            {/* Tagline — prominent, part of the share unit */}
-            <p className="font-display relative mt-2 text-xl font-extrabold tracking-tight" style={{ color }}>
+            {/* Tagline — subhead under the name */}
+            <p className="font-display relative mt-2.5 text-2xl font-extrabold tracking-tight" style={{ color }}>
               {arch.tagline}
             </p>
 
-            {/* Percentile verdict — THE headline stat (replaces the raw score) */}
-            <p className="font-display relative mt-4 text-2xl font-black capitalize" style={{ color }}>
+            {/* Percentile verdict — the headline stat */}
+            <p className="font-display relative mt-5 font-black capitalize leading-none" style={{ color, fontSize: '2.1rem' }}>
               {topTxt.toLowerCase()}
             </p>
-            <p className="relative mt-1 text-[13px] text-text2">
+            <p className="relative mt-1.5 text-sm text-text2">
               stronger than <span className="font-bold text-text">{pct}%</span> of {sexPhrase(result)}
             </p>
 
-            {/* Trust badge — answer "is this fake?" before they scroll */}
-            <p className="font-mono relative mt-2 text-[10px] uppercase tracking-wide text-textmut">
-              {dots ? 'Based on DOTS + age-adjusted percentile' : 'Epley 1RM · age & bodyweight adjusted'}
+            {/* Rarity — reinforces the flex */}
+            <p className="relative mt-2 text-[13px] text-text2">{arch.rarity}</p>
+
+            {/* Trust badge */}
+            <p className="font-mono relative mt-3 text-[10px] uppercase tracking-wide text-textmut">
+              Based on Epley 1RM · bodyweight-adjusted · age-adjusted
             </p>
           </div>
 
-          {/* Secondary stat strip — score / tier / DOTS demoted, present but quiet */}
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-xl border border-line px-3 py-2"
-            style={{ background: hexToRgba(color, 0.05) }}>
-            <span className="font-mono text-[10px] uppercase tracking-wide text-textmut">
-              {telemetryLabel(archetype!, arch.telemetry)}
-            </span>
-            <span className="text-line">·</span>
-            <span className="font-mono text-[10px] uppercase tracking-wide text-textmut">Score {score}</span>
-            <span className="text-line">·</span>
-            <span className="font-mono text-[10px] uppercase tracking-wide text-textmut">{tier}</span>
+          {/* Compact supporting stat — demoted */}
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <span className="font-mono text-[10px] uppercase tracking-wide text-textmut">Strength Score {score}</span>
             {dots && (
               <>
                 <span className="text-line">·</span>
                 <span className="font-mono text-[10px] uppercase tracking-wide text-textmut">DOTS {Math.round(dots.score)}</span>
               </>
             )}
-          </div>
-
-          {/* Rarity + description (secondary) */}
-          <p className="mt-3 text-center text-[12px] text-textmut">{arch.rarity}</p>
-          <p className="mt-2 text-center text-[13px] leading-relaxed text-text2">
-            {arch.description}
-          </p>
-
-          {/* Flex / Flaw */}
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <div className="rounded-lg border border-line bg-surface px-3 py-2">
-              <p className="font-mono text-[10px] uppercase tracking-wide" style={{ color }}>
-                Flex
-              </p>
-              <p className="mt-0.5 text-[12px] leading-snug text-text">{arch.flex}</p>
-            </div>
-            <div className="rounded-lg border border-line bg-surface px-3 py-2">
-              <p className="font-mono text-[10px] uppercase tracking-wide text-textmut">Flaw</p>
-              <p className="mt-0.5 text-[12px] leading-snug text-text2">{arch.flaw}</p>
-            </div>
           </div>
         </>
       ) : (
@@ -282,36 +245,7 @@ export const ResultCard = forwardRef<HTMLDivElement, Props>(function ResultCard(
         ))}
       </div>
 
-      {rankUpText && (
-        <div
-          className="mt-3 flex items-center gap-2 rounded-lg px-3 py-2"
-          style={{ background: hexToRgba('#FF7A2E', 0.08), border: '1px solid rgba(255,122,46,0.25)' }}
-        >
-          <span style={{ color: 'var(--color-accent)' }} className="text-sm font-bold">↑</span>
-          <span className="text-[12px] text-text2">
-            Next rank-up: <span className="font-mono font-bold text-text">{rankUpText}</span>
-          </span>
-        </div>
-      )}
-
-      {/* Rival */}
-      {arch && (
-        <p className="font-mono mt-3 text-center text-[11px] text-textmut">
-          Your rival:{' '}
-          <span className="font-bold" style={{ color: ARCHETYPES[arch.rival].color }}>
-            {ARCHETYPES[arch.rival].name}
-          </span>
-          .
-        </p>
-      )}
-
-      {/* Methodology */}
-      <p className="font-mono mt-2 text-center text-[9px] leading-relaxed text-textmut">
-        1RM via Epley · age- &amp; bodyweight-adjusted · ranked vs {POP_LABEL[input.population]}
-        {ageAdjusted ? ` · age-adjusted (${input.age})` : ''}
-      </p>
-
-      {/* Footer — the invitation */}
+      {/* Footer — the invitation + branding for reposts */}
       <div className="mt-3 border-t border-line pt-3">
         <p className="font-display text-center text-[15px] font-extrabold tracking-tight" style={{ color }}>
           {TAGLINE} → {shareHost()}
@@ -368,7 +302,7 @@ function TeaserHero({
         stronger than <span className="font-bold text-text">{pct}%</span> of {sex}
       </p>
       <p className="font-mono relative mt-2 text-[10px] uppercase tracking-wide text-textmut">
-        {result.dots ? 'Based on DOTS + age-adjusted percentile' : 'Epley 1RM · age & bodyweight adjusted'}
+        Based on Epley 1RM · bodyweight-adjusted · age-adjusted
       </p>
 
       {/* Secondary strip — score / tier demoted */}
