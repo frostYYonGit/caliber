@@ -10,8 +10,8 @@ import { LandingCard } from '../components/LandingCard';
  *
  * It is deliberately lightweight: no funnel, no scoring engine, no
  * html-to-image, no eager PostHog. Those load only when the visitor taps
- * "Find my type" (App lazy-loads the quiz chunk then). Everything here serves
- * one action: a single, repeated, thumb-zone CTA.
+ * "Find my type" (App lazy-loads the quiz chunk then). The page is short enough
+ * that the single above-the-fold CTA stays on screen — one button, no clutter.
  */
 
 const HEADLINES = {
@@ -34,11 +34,8 @@ function resolveHeadline(): string {
   return HEADLINES.default;
 }
 
-type CtaLocation = 'hero' | 'sticky' | 'mid';
-
 export function Landing({ onStart }: { onStart: () => void }) {
   const [headline] = useState(resolveHeadline);
-  const [showSticky, setShowSticky] = useState(false);
 
   useEffect(() => {
     trackEvent('homepage_view', {
@@ -47,35 +44,14 @@ export function Landing({ onStart }: { onStart: () => void }) {
     });
   }, []);
 
-  // Sticky CTA appears once the visitor scrolls down past the hero. A simple
-  // scroll threshold (rAF-throttled) is far more reliable than an observer here:
-  // the page is short, so the hero CTA rarely leaves the viewport entirely.
-  useEffect(() => {
-    let raf = 0;
-    const onScroll = () => {
-      if (raf) return;
-      raf = requestAnimationFrame(() => {
-        raf = 0;
-        setShowSticky(window.scrollY > 220);
-      });
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
-
-  const start = (cta_location: CtaLocation) => {
-    trackEvent('clicked_find_your_type', { path: window.location.pathname, cta_location });
+  const start = () => {
+    trackEvent('clicked_find_your_type', { path: window.location.pathname, cta_location: 'hero' });
     onStart();
   };
 
   return (
-    <>
-      <Shell>
-        {/* Top bar — wordmark only, no nav competing with the CTA */}
+    <Shell>
+      {/* Top bar — wordmark only, no nav competing with the CTA */}
         <header className="flex items-center pt-3 pb-1">
           <p className="font-display text-lg font-black tracking-tight text-text">
             {APP_NAME}
@@ -105,13 +81,13 @@ export function Landing({ onStart }: { onStart: () => void }) {
           </p>
 
           <div className="mt-3">
-            <CtaButton onClick={() => start('hero')}>Find my type →</CtaButton>
+            <CtaButton onClick={start}>Find my type →</CtaButton>
           </div>
           <p className="mt-2 text-center text-[13px] text-text2">Free · No signup · 60 seconds</p>
         </section>
 
         {/* ── Below the fold (kept short) ── */}
-        <section className="mt-12 flex flex-col gap-7 pb-10">
+        <section className="mt-12 flex flex-col gap-7 pb-12">
           <div className="flex flex-col gap-2.5">
             <Step n="1" label="Enter your lifts" />
             <Step n="2" label="Get your type + rank" />
@@ -121,8 +97,6 @@ export function Landing({ onStart }: { onStart: () => void }) {
           <p className="font-mono text-center text-[11px] leading-relaxed text-textmut">
             Real standards · Epley 1RM · age &amp; bodyweight adjusted · DOTS
           </p>
-
-          <CtaButton onClick={() => start('mid')}>Find my type →</CtaButton>
 
           <footer className="flex flex-col items-center gap-1 pt-2">
             <p className="font-display text-sm font-black tracking-tight text-textmut">
@@ -134,24 +108,7 @@ export function Landing({ onStart }: { onStart: () => void }) {
             </p>
           </footer>
         </section>
-      </Shell>
-
-      {/* Sticky thumb-zone CTA — always one tap away on scroll */}
-      <div
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-line transition-transform duration-300"
-        style={{
-          transform: showSticky ? 'translateY(0)' : 'translateY(110%)',
-          background: 'rgba(14,15,18,0.92)',
-          backdropFilter: 'blur(10px)',
-          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)',
-          paddingTop: 12,
-        }}
-      >
-        <div className="mx-auto w-full max-w-[440px] px-5">
-          <CtaButton onClick={() => start('sticky')}>Find my type →</CtaButton>
-        </div>
-      </div>
-    </>
+    </Shell>
   );
 }
 
