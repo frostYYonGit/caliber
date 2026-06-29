@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { decodeResult } from '../lib/share';
 import { ResultView } from '../components/ResultView';
-import { Shell } from './Home';
+import { Shell } from '../components/Shell';
 import { PrimaryButton } from '../components/ui';
 import { APP_NAME, TAGLINE } from '../config';
-import { trackEvent, resultEventProps } from '../lib/analytics';
+import { trackEvent } from '../lib/analytics';
+import { resultEventProps } from '../lib/analytics-result';
 
 /** Reads URL params and renders the card directly — skips onboarding (§6.2). */
 export function Result() {

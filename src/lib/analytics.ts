@@ -10,12 +10,13 @@
  * Debug: append ?debugEvents=true to any URL to console.log every event.
  */
 import { track } from '@vercel/analytics';
-import posthog from 'posthog-js';
-import { ARCHETYPES } from '../data/archetypes';
-import { LIFT_BY_ID } from '../data/standards';
-import type { IronRankResult } from './result';
+import type { PostHog } from 'posthog-js';
 
-let phReady = false;
+// PostHog is loaded lazily (~70KB) so it stays off the landing's critical path
+// (P0: speed). Events fired before it loads are queued and flushed on init.
+let ph: PostHog | null = null;
+const queue: Array<{ name: string; props: Record<string, Scalar> }> = [];
+const MAX_QUEUE = 50;
 
 type Scalar = string | number | boolean;
 type Props = Record<string, unknown>;
@@ -114,17 +115,38 @@ function deviceType(): 'mobile' | 'desktop' {
 export function initAnalytics(): void {
   try {
     const key = import.meta.env.VITE_PUBLIC_POSTHOG_KEY;
-    if (!key || phReady) return;
-    posthog.init(key, {
-      api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
-      capture_pageview: true,
-      capture_pageleave: true, // bounce rate / session duration
-      autocapture: true,
-      capture_performance: { web_vitals: true }, // $web_vitals (LCP, INP, CLS)
-    });
-    phReady = true;
-    // Attach attribution + session to every PostHog event (incl. autocaptured).
-    posthog.register({ ...attribution(), caliber_session_id: sessionId() });
+    if (!key || ph) return;
+    // Dynamic import: posthog-js is fetched as its own chunk, after first paint,
+    // so it never blocks the landing render.
+    import('posthog-js')
+      .then(({ default: posthog }) => {
+        try {
+          posthog.init(key, {
+            api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
+            capture_pageview: true,
+            capture_pageleave: true, // bounce rate / session duration
+            autocapture: true,
+            capture_performance: { web_vitals: true }, // $web_vitals (LCP, INP, CLS)
+          });
+          // Attach attribution + session to every PostHog event (incl. autocaptured).
+          posthog.register({ ...attribution(), caliber_session_id: sessionId() });
+          ph = posthog;
+          // Flush anything fired before PostHog was ready (e.g. homepage_view).
+          for (const e of queue) {
+            try {
+              posthog.capture(e.name, e.props);
+            } catch {
+              /* ignore */
+            }
+          }
+          queue.length = 0;
+        } catch {
+          /* analytics must never break the product */
+        }
+      })
+      .catch(() => {
+        /* posthog failed to load — Vercel Analytics still works */
+      });
   } catch {
     /* analytics must never break the product */
   }
@@ -148,7 +170,8 @@ export function trackEvent(name: string, props: Props = {}): void {
     }
     if (debugOn()) console.log('[caliber-event]', name, clean);
     try {
-      if (phReady) posthog.capture(name, clean);
+      if (ph) ph.capture(name, clean);
+      else if (queue.length < MAX_QUEUE) queue.push({ name, props: clean });
     } catch {
       /* ignore */
     }
@@ -172,49 +195,4 @@ export function trackEventOnce(onceKey: string, name: string, props: Props = {})
     /* if storage fails, fall through and just track */
   }
   trackEvent(name, props);
-}
-
-/** Shared property bag for the result/share events, derived from the result. */
-export function resultEventProps(result: IronRankResult): Props {
-  try {
-    const { composite, input, lifts, bestLift, archetype } = result;
-    const byPct = [...lifts].sort((a, b) => a.percentile - b.percentile);
-    const weakest = byPct[0];
-    const entered = new Set(input.entries.map((e) => e.id));
-    return {
-      archetype: archetype ? ARCHETYPES[archetype.id].name : 'none',
-      strength_score: composite.strengthScore,
-      percentile: Math.round(composite.overallPct),
-      tier: composite.overallTier,
-      sex: input.sex,
-      age: input.age,
-      bodyweight: Math.round(input.bodyweightKg),
-      units: input.unit,
-      comparison_population: input.population,
-      valid_lift_count: lifts.length,
-      entered_lifts: lifts.map((l) => LIFT_BY_ID[l.id]?.name ?? l.id),
-      top_lift: bestLift ? (LIFT_BY_ID[bestLift.id]?.name ?? bestLift.id) : null,
-      weakest_lift: weakest ? (LIFT_BY_ID[weakest.id]?.name ?? weakest.id) : null,
-      has_squat: entered.has('back_squat'),
-      has_bench: entered.has('bench_press'),
-      has_deadlift: entered.has('deadlift'),
-    };
-  } catch {
-    return {};
-  }
-}
-
-/** The 4 core fields for share/save events. */
-export function shareEventProps(result: IronRankResult): Props {
-  try {
-    const { composite, archetype } = result;
-    return {
-      archetype: archetype ? ARCHETYPES[archetype.id].name : 'none',
-      strength_score: composite.strengthScore,
-      percentile: Math.round(composite.overallPct),
-      tier: composite.overallTier,
-    };
-  } catch {
-    return {};
-  }
 }

@@ -1,7 +1,8 @@
-import { useMemo, useState, type ReactNode } from 'react';
-import { useQuiz } from '../state/QuizContext';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { QuizProvider, useQuiz } from '../state/QuizContext';
 import { isStepValid, parseNum, STEP_COUNT } from '../state/quizReducer';
-import { trackEvent, resultEventProps } from '../lib/analytics';
+import { trackEvent } from '../lib/analytics';
+import { resultEventProps } from '../lib/analytics-result';
 import { Progress } from '../components/Progress';
 import { PrimaryButton, GhostButton } from '../components/ui';
 import { SexUnits } from '../components/steps/SexUnits';
@@ -10,7 +11,7 @@ import { Lifts } from '../components/steps/Lifts';
 import { Population } from '../components/steps/Population';
 import { Analyzing } from '../components/Analyzing';
 import { ResultView } from '../components/ResultView';
-import { Intro } from '../components/Intro';
+import { Shell } from '../components/Shell';
 import { TAGLINE } from '../config';
 import { buildResult, resolveQuiz, type IronRankResult } from '../lib/result';
 import { resultPath } from '../lib/share';
@@ -18,12 +19,29 @@ import { resultPath } from '../lib/share';
 const STEP_COMPONENTS = [SexUnits, AgeWeight, Lifts, Population];
 const STEP_NAMES = ['sex_units', 'age_bodyweight', 'lifts', 'compare'];
 
-type Phase = 'intro' | 'quiz' | 'analyzing' | 'result';
+type Phase = 'quiz' | 'analyzing' | 'result';
 
-export function Home() {
+/**
+ * The 4-step funnel + analyzing + result. Lazy-loaded by App when the visitor
+ * taps "Find my type" on the landing — this is where the scoring engine,
+ * html-to-image and the rest of the heavy code finally enter the bundle.
+ */
+function QuizFlow() {
   const { state, dispatch } = useQuiz();
-  const [phase, setPhase] = useState<Phase>('intro');
+  const [phase, setPhase] = useState<Phase>('quiz');
   const [result, setResult] = useState<IronRankResult | null>(null);
+
+  // The funnel has begun the moment this chunk mounts (CTA was tapped on landing).
+  const started = useRef(false);
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+    trackEvent('onboarding_started', {
+      starting_step: STEP_NAMES[0],
+      units: state.unit,
+      comparison_population: state.population,
+    });
+  }, [state.unit, state.population]);
 
   const valid = useMemo(() => isStepValid(state), [state]);
   const isLast = state.step === STEP_COUNT - 1;
@@ -36,15 +54,6 @@ export function Home() {
     bodyweight: Number.isFinite(parseNum(state.bodyweight)) ? parseNum(state.bodyweight) : undefined,
     comparison_population: state.population,
   });
-
-  const startQuiz = () => {
-    trackEvent('onboarding_started', {
-      starting_step: STEP_NAMES[0],
-      units: state.unit,
-      comparison_population: state.population,
-    });
-    setPhase('quiz');
-  };
 
   const onContinue = () => {
     if (!valid) return;
@@ -80,17 +89,9 @@ export function Home() {
     dispatch({ type: 'RESET' });
     setResult(null);
     window.history.pushState({}, '', '/');
-    setPhase('intro');
+    setPhase('quiz');
     window.scrollTo(0, 0);
   };
-
-  if (phase === 'intro') {
-    return (
-      <Shell>
-        <Intro onStart={startQuiz} />
-      </Shell>
-    );
-  }
 
   if (phase === 'analyzing') {
     return (
@@ -141,12 +142,10 @@ export function Home() {
   );
 }
 
-export function Shell({ children }: { children: ReactNode }) {
+export default function Quiz() {
   return (
-    <div className="app-bg min-h-dvh w-full">
-      <div className="mx-auto flex min-h-dvh w-full max-w-[440px] flex-col px-5">
-        {children}
-      </div>
-    </div>
+    <QuizProvider>
+      <QuizFlow />
+    </QuizProvider>
   );
 }

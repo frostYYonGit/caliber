@@ -26,15 +26,26 @@
     />
     <meta name="twitter:card" content="summary_large_image" />
 
-    <!-- Fonts: crossorigin on the stylesheet link makes PNG font embedding deterministic.
-         Archivo is requested at width 125 (Expanded) for the display weights. -->
+    <!-- Fonts: loaded non-render-blocking (preload as style → swap to stylesheet)
+         so the landing paints immediately; display=swap shows fallback text first.
+         crossorigin stays on the resolved stylesheet so PNG font embedding is
+         deterministic. Archivo is width 125 (Expanded) for the display weights. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      rel="stylesheet"
+      rel="preload"
+      as="style"
       crossorigin="anonymous"
       href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,400;125,500;125,700;125,800;125,900&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
     />
+    <noscript>
+      <link
+        rel="stylesheet"
+        crossorigin="anonymous"
+        href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,400;125,500;125,700;125,800;125,900&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap"
+      />
+    </noscript>
   </head>
   <body>
     <div id="root"></div>

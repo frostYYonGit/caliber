@@ -3,7 +3,8 @@ import { toPng } from 'html-to-image';
 import type { IronRankResult } from '../lib/result';
 import { resultUrl } from '../lib/share';
 import { shareOrigin } from '../config';
-import { trackEvent, shareEventProps } from '../lib/analytics';
+import { trackEvent } from '../lib/analytics';
+import { shareEventProps } from '../lib/analytics-result';
 import { StoryCard } from './StoryCard';
 
 type Busy = null | 'png' | 'link' | 'story';
