@@ -10,9 +10,12 @@
  * Debug: append ?debugEvents=true to any URL to console.log every event.
  */
 import { track } from '@vercel/analytics';
+import posthog from 'posthog-js';
 import { ARCHETYPES } from '../data/archetypes';
 import { LIFT_BY_ID } from '../data/standards';
 import type { IronRankResult } from './result';
+
+let phReady = false;
 
 type Scalar = string | number | boolean;
 type Props = Record<string, unknown>;
@@ -104,6 +107,27 @@ function deviceType(): 'mobile' | 'desktop' {
   }
 }
 
+/**
+ * Initialize PostHog (the funnel tool) from env. No key => stays off (so local
+ * dev and any other env without the key just no-op). Call once at app start.
+ */
+export function initAnalytics(): void {
+  try {
+    const key = import.meta.env.VITE_PUBLIC_POSTHOG_KEY;
+    if (!key || phReady) return;
+    posthog.init(key, {
+      api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
+      capture_pageview: true,
+      autocapture: true,
+    });
+    phReady = true;
+    // Attach attribution + session to every PostHog event (incl. autocaptured).
+    posthog.register({ ...attribution(), caliber_session_id: sessionId() });
+  } catch {
+    /* analytics must never break the product */
+  }
+}
+
 /** The one tracking entry point. Merges base context, sanitizes, never throws. */
 export function trackEvent(name: string, props: Props = {}): void {
   try {
@@ -121,7 +145,16 @@ export function trackEvent(name: string, props: Props = {}): void {
       else clean[k] = v as Scalar;
     }
     if (debugOn()) console.log('[caliber-event]', name, clean);
-    track(name, clean);
+    try {
+      if (phReady) posthog.capture(name, clean);
+    } catch {
+      /* ignore */
+    }
+    try {
+      track(name, clean);
+    } catch {
+      /* ignore */
+    }
   } catch {
     /* analytics must never break the product */
   }
