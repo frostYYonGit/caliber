@@ -58,6 +58,18 @@ body {
   border-radius: 6px;
 }
 
+/* Text/number inputs always sit inside a focus-within container that already
+   shows the focus state (accent border), so suppress their own focus ring —
+   otherwise the rule above doubles up with the container border (two offset
+   orange outlines). Kept unlayered so it beats the Tailwind utilities reliably
+   in the production build, not just dev. Buttons keep their focus ring. */
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible {
+  outline: none;
+}
+
 /* Kill number-input spinners — we use our own steppers. */
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button {

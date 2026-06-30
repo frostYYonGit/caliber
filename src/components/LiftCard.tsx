@@ -124,7 +124,7 @@ export function LiftCard({ id }: { id: LiftId }) {
             placeholder={placeholder(state.unit, addedLoad, perHand)}
             onChange={(e) => dispatch({ type: 'SET_LIFT_WEIGHT', id, weight: e.target.value })}
             onBlur={fireLiftEvent}
-            className="font-display w-full bg-transparent py-2.5 text-2xl font-extrabold text-text caret-accent outline-none focus:outline-none focus-visible:outline-none placeholder:text-textmut/40"
+            className="font-display w-full bg-transparent py-2.5 text-2xl font-extrabold text-text caret-accent outline-none placeholder:text-textmut/40"
             style={{ minHeight: 50 }}
           />
           <span className="font-mono ml-2 shrink-0 text-sm font-bold uppercase text-textmut">

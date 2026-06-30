@@ -140,7 +140,7 @@ export function LiftLibrary() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search a lift to add (bench, rdl, lat pulldown…)"
           aria-label="Search lifts to add"
-          className="w-full bg-transparent px-2 py-3 text-[15px] text-text outline-none focus:outline-none focus-visible:outline-none placeholder:text-textmut"
+          className="w-full bg-transparent px-2 py-3 text-[15px] text-text outline-none placeholder:text-textmut"
         />
         {query && (
           <button aria-label="Clear search" onClick={() => setQuery('')} className="px-1 text-lg leading-none text-textmut hover:text-text">

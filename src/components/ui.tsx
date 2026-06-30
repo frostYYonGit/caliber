@@ -148,10 +148,7 @@ export function BigNumberInput({
         placeholder={placeholder}
         autoFocus={autoFocus}
         onChange={(e) => onChange(e.target.value)}
-        // Suppress the input's own focus ring — the container's
-        // focus-within:border-accent is the focus indicator (avoids a doubled
-        // orange outline from the global :focus-visible rule).
-        className="font-display w-full bg-transparent py-4 text-4xl font-extrabold text-text outline-none focus:outline-none focus-visible:outline-none placeholder:text-textmut/50"
+        className="font-display w-full bg-transparent py-4 text-4xl font-extrabold text-text outline-none placeholder:text-textmut/50"
       />
       {unit && (
         <span className="font-mono ml-2 shrink-0 text-lg font-bold uppercase text-textmut">
