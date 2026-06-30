@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useQuiz } from '../state/QuizContext';
 import { MAX_REPS, isLiftEntered, parseNum } from '../state/quizReducer';
-import { LIFT_BY_ID, TIER_COLOR, customName, isCustom, isScored, type LiftId } from '../data/standards';
+import { LIFT_BY_ID, customName, isCustom, isScored, type LiftId } from '../data/standards';
 import { oneRM, scoreLift } from '../lib/scoring';
 import { formatWeight, fromKg, toKg, type Unit } from '../lib/units';
 import { trackEvent, trackEventOnce } from '../lib/analytics';
@@ -55,9 +55,7 @@ export function LiftCard({ id }: { id: LiftId }) {
           <span className="mx-1.5 text-line">·</span>
           {ratio.toFixed(2)}× BW
           <span className="mx-1.5 text-line">·</span>
-          <span style={{ color: TIER_COLOR[res.tier] }} className="font-semibold">
-            {res.tier}
-          </span>
+          <span className="font-semibold text-text">{res.tier}</span>
         </p>
         <p className={`mt-1 text-[12px] ${affirm.cls}`}>{affirm.text}</p>
       </>
