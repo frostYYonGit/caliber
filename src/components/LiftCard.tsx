@@ -156,6 +156,13 @@ export function LiftCard({ id }: { id: LiftId }) {
         </div>
       </div>
 
+      {draft.reps >= MAX_REPS && (
+        <p className="font-mono mt-2 text-[11px] leading-snug text-textmut">
+          Capped at {MAX_REPS} — past this, a 1-rep-max estimate isn’t accurate. Enter a heavier set
+          for a true read.
+        </p>
+      )}
+
       {readout}
     </div>
   );

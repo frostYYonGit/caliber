@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuiz } from '../state/QuizContext';
+import { trackEvent } from '../lib/analytics';
 import {
   BODY_PART_ORDER,
   CUSTOM_PREFIX,
@@ -76,6 +77,20 @@ export function LiftLibrary() {
   }, [q, state.order]);
 
   const suggestion = q && results.length === 0 ? looseClosest(addableAll, q) : null;
+
+  // Capture zero-result search terms so the catalog can be expanded data-first:
+  // these are lifts real users typed and didn't find. Debounced (fires once the
+  // term settles) and deduped per session so it isn't spammed per keystroke.
+  const reportedMisses = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (q.length < 3 || results.length > 0 || reportedMisses.current.has(q)) return;
+    const t = setTimeout(() => {
+      if (reportedMisses.current.has(q)) return;
+      reportedMisses.current.add(q);
+      trackEvent('lift_search_miss', { search_term: q, had_suggestion: !!suggestion });
+    }, 700);
+    return () => clearTimeout(t);
+  }, [q, results.length, suggestion]);
 
   // Soft type-unlock note (never a gate): need a compound upper AND lower entered.
   const enteredCompoundGroups = useMemo(() => {

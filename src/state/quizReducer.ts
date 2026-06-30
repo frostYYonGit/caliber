@@ -3,8 +3,11 @@ import type { LiftId, Population, Sex } from '../data/standards';
 import { DEFAULT_LIFTS, LIFT_BY_ID, isScored } from '../data/standards';
 import type { Unit } from '../lib/units';
 
-/** Epley is only reliable to ~10–12 reps; we cap the stepper there (§4.1). */
-export const MAX_REPS = 12;
+/**
+ * Epley stays usable (if loose) to ~15 reps; past that a 1-rep-max estimate is
+ * fiction and would produce fake scores, so the stepper hard-caps here (§4.1).
+ */
+export const MAX_REPS = 15;
 
 export interface LiftDraft {
   weight: string; // raw input in the current unit

@@ -6,6 +6,7 @@ import { PrimaryButton } from '../components/ui';
 import { APP_NAME, TAGLINE } from '../config';
 import { trackEvent } from '../lib/analytics';
 import { resultEventProps } from '../lib/analytics-result';
+import { goToLanding } from '../lib/nav';
 
 /** Reads URL params and renders the card directly — skips onboarding (§6.2). */
 export function Result() {
@@ -23,10 +24,7 @@ export function Result() {
     }
   }, [result]);
 
-  const goHome = () => {
-    window.history.pushState({}, '', '/');
-    window.location.reload();
-  };
+  const goHome = () => goToLanding();
 
   if (!result) {
     return (
@@ -48,10 +46,18 @@ export function Result() {
   return (
     <Shell>
       <div className="pt-6 text-center">
-        <p className="font-display text-xl font-black tracking-tight text-text">
+        <a
+          href="/"
+          onClick={(e) => {
+            e.preventDefault();
+            goToLanding();
+          }}
+          aria-label="Caliber home"
+          className="font-display inline-block cursor-pointer text-xl font-black tracking-tight text-text transition-opacity hover:opacity-80"
+        >
           {APP_NAME}
           <span className="text-accent">.</span>
-        </p>
+        </a>
         <p className="font-mono mt-1 text-xs uppercase tracking-[0.2em] text-textmut">
           {TAGLINE}
         </p>

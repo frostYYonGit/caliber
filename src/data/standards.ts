@@ -1,5 +1,5 @@
 /**
- * CALIBER standards data (§4) — full catalog (~40 lifts).
+ * CALIBER standards data (§4) — full catalog (~60 lifts).
  *
  * Every lift has a real published bodyweight-ratio standard. Barbell anchors are
  * the original spec values (and blessed 0.85×/0.80× derivations); machine,
@@ -82,6 +82,10 @@ const DEFS: Def[] = [
   { id: 'leg_extension', name: 'Leg Extension', short: 'Leg Ext', bodyPart: 'Legs', group: 'lower', kind: 'isolation', confidence: 'MED', ratios: [0.5, 0.75, 1.25, 1.75, 2.5], addedLoad: false, perHand: false, hint: 'machine' },
   { id: 'leg_curl', name: 'Lying Leg Curl', short: 'Leg Curl', bodyPart: 'Legs', group: 'lower', kind: 'isolation', confidence: 'MED', ratios: [0.25, 0.5, 0.75, 1.25, 1.75], addedLoad: false, perHand: false, hint: 'machine' },
   { id: 'seated_leg_curl', name: 'Seated Leg Curl', short: 'S. Leg Curl', bodyPart: 'Legs', group: 'lower', kind: 'isolation', confidence: 'MED', ratios: [0.5, 0.75, 1.0, 1.5, 2.0], addedLoad: false, perHand: false, hint: 'machine' },
+  { id: 'deficit_deadlift', name: 'Deficit Deadlift', short: 'Deficit DL', bodyPart: 'Legs', group: 'lower', kind: 'compound', confidence: 'HIGH', ratios: [1.0, 1.5, 2.0, 2.5, 3.25], addedLoad: false, perHand: false },
+  { id: 'box_squat', name: 'Box Squat', short: 'Box Sq', bodyPart: 'Legs', group: 'lower', kind: 'compound', confidence: 'HIGH', ratios: [0.75, 1.25, 1.75, 2.5, 3.25], addedLoad: false, perHand: false },
+  { id: 'dumbbell_lunge', name: 'Dumbbell Lunge', short: 'Lunge', bodyPart: 'Legs', group: 'lower', kind: 'compound', confidence: 'MED', ratios: [0.1, 0.2, 0.4, 0.6, 0.85], addedLoad: false, perHand: true, hint: 'per dumbbell' },
+  { id: 'seated_calf_raise', name: 'Seated Calf Raise', short: 'Calf Raise', bodyPart: 'Legs', group: 'lower', kind: 'isolation', confidence: 'MED', ratios: [0.25, 0.75, 1.25, 2.0, 3.0], addedLoad: false, perHand: false, hint: 'machine' },
 
   /* ----------------------------- CHEST (upper) ---------------------------- */
   { id: 'bench_press', name: 'Bench Press', short: 'Bench', bodyPart: 'Chest', group: 'upper', kind: 'compound', confidence: 'HIGH', ratios: r(BENCH), addedLoad: false, perHand: false },
@@ -91,6 +95,9 @@ const DEFS: Def[] = [
   { id: 'machine_chest_press', name: 'Machine Chest Press', short: 'Mach. Press', bodyPart: 'Chest', group: 'upper', kind: 'compound', confidence: 'MED', ratios: [0.5, 0.75, 1.25, 1.75, 2.25], addedLoad: false, perHand: false, hint: 'machine' },
   { id: 'cable_fly', name: 'Cable Fly', short: 'Fly', bodyPart: 'Chest', group: 'upper', kind: 'isolation', confidence: 'MED', ratios: [0.05, 0.25, 0.5, 0.85, 1.35], addedLoad: false, perHand: false, hint: 'cable / machine' },
   { id: 'weighted_dip', name: 'Weighted Dip', short: 'Dip', bodyPart: 'Chest', group: 'upper', kind: 'compound', confidence: 'HIGH', ratios: [0.0, 0.35, 0.6, 0.9, 1.2], addedLoad: true, perHand: false, hint: 'added over bodyweight' },
+  { id: 'decline_bench_press', name: 'Decline Bench Press', short: 'Decline', bodyPart: 'Chest', group: 'upper', kind: 'compound', confidence: 'HIGH', ratios: [0.5, 1.0, 1.25, 1.75, 2.25], addedLoad: false, perHand: false },
+  { id: 'smith_machine_bench_press', name: 'Smith Machine Bench Press', short: 'Smith Bench', bodyPart: 'Chest', group: 'upper', kind: 'compound', confidence: 'MED', ratios: [0.5, 1.0, 1.25, 1.75, 2.25], addedLoad: false, perHand: false, hint: 'machine' },
+  { id: 'dumbbell_fly', name: 'Dumbbell Fly', short: 'DB Fly', bodyPart: 'Chest', group: 'upper', kind: 'isolation', confidence: 'MED', ratios: [0.1, 0.15, 0.3, 0.5, 0.7], addedLoad: false, perHand: true, hint: 'per dumbbell' },
 
   /* --------------------------- SHOULDERS (upper) -------------------------- */
   { id: 'overhead_press', name: 'Overhead Press', short: 'OHP', bodyPart: 'Shoulders', group: 'upper', kind: 'compound', confidence: 'HIGH', ratios: r(OHP), addedLoad: false, perHand: false },
@@ -98,6 +105,9 @@ const DEFS: Def[] = [
   { id: 'machine_shoulder_press', name: 'Machine Shoulder Press', short: 'Mach. OHP', bodyPart: 'Shoulders', group: 'upper', kind: 'compound', confidence: 'MED', ratios: [0.25, 0.5, 1.0, 1.5, 2.0], addedLoad: false, perHand: false, hint: 'machine' },
   { id: 'arnold_press', name: 'Arnold Press', short: 'Arnold', bodyPart: 'Shoulders', group: 'upper', kind: 'compound', confidence: 'MED', ratios: [0.1, 0.2, 0.3, 0.45, 0.65], addedLoad: false, perHand: true, hint: 'per dumbbell' },
   { id: 'lateral_raise', name: 'Lateral Raise', short: 'Lat Raise', bodyPart: 'Shoulders', group: 'upper', kind: 'isolation', confidence: 'MED', ratios: [0.05, 0.1, 0.2, 0.3, 0.45], addedLoad: false, perHand: true, hint: 'per dumbbell' },
+  { id: 'upright_row', name: 'Upright Row', short: 'Upright', bodyPart: 'Shoulders', group: 'upper', kind: 'isolation', confidence: 'MED', ratios: [0.25, 0.5, 0.75, 1.25, 1.5], addedLoad: false, perHand: false },
+  { id: 'front_raise', name: 'Front Raise', short: 'Front Raise', bodyPart: 'Shoulders', group: 'upper', kind: 'isolation', confidence: 'MED', ratios: [0.05, 0.1, 0.25, 0.4, 0.55], addedLoad: false, perHand: true, hint: 'per dumbbell' },
+  { id: 'rear_delt_fly', name: 'Rear Delt Fly', short: 'Rear Delt', bodyPart: 'Shoulders', group: 'upper', kind: 'isolation', confidence: 'MED', ratios: [0.05, 0.1, 0.25, 0.4, 0.6], addedLoad: false, perHand: true, hint: 'per dumbbell' },
 
   /* ----------------------------- BACK (upper) ----------------------------- */
   { id: 'barbell_row', name: 'Barbell Row', short: 'Row', bodyPart: 'Back', group: 'upper', kind: 'compound', confidence: 'HIGH', ratios: s(BENCH, 0.85), addedLoad: false, perHand: false },
@@ -107,6 +117,12 @@ const DEFS: Def[] = [
   { id: 'seated_cable_row', name: 'Seated Cable Row', short: 'Cable Row', bodyPart: 'Back', group: 'upper', kind: 'compound', confidence: 'MED', ratios: [0.5, 0.75, 1.0, 1.5, 2.0], addedLoad: false, perHand: false, hint: 'machine' },
   { id: 'weighted_pullup', name: 'Weighted Pull-up', short: 'Pull-up', bodyPart: 'Back', group: 'upper', kind: 'compound', confidence: 'HIGH', ratios: [0.0, 0.25, 0.5, 0.75, 1.0], addedLoad: true, perHand: false, hint: 'added over bodyweight' },
   { id: 'face_pull', name: 'Face Pull', short: 'Face Pull', bodyPart: 'Back', group: 'upper', kind: 'isolation', confidence: 'MED', ratios: [0.15, 0.35, 0.6, 0.9, 1.3], addedLoad: false, perHand: false, hint: 'cable' },
+  { id: 'pendlay_row', name: 'Pendlay Row', short: 'Pendlay', bodyPart: 'Back', group: 'upper', kind: 'compound', confidence: 'HIGH', ratios: [0.5, 0.75, 1.0, 1.5, 1.75], addedLoad: false, perHand: false },
+  { id: 'chest_supported_row', name: 'Chest-Supported Row', short: 'CSR', bodyPart: 'Back', group: 'upper', kind: 'compound', confidence: 'MED', ratios: [0.1, 0.25, 0.5, 0.75, 1.1], addedLoad: false, perHand: true, hint: 'per dumbbell' },
+  { id: 'machine_row', name: 'Machine Row', short: 'Mach. Row', bodyPart: 'Back', group: 'upper', kind: 'compound', confidence: 'MED', ratios: [0.5, 0.75, 1.25, 1.75, 2.5], addedLoad: false, perHand: false, hint: 'machine' },
+  { id: 'straight_arm_pulldown', name: 'Straight-Arm Pulldown', short: 'SA Pulldown', bodyPart: 'Back', group: 'upper', kind: 'isolation', confidence: 'MED', ratios: [0.25, 0.5, 0.75, 1.0, 1.5], addedLoad: false, perHand: false, hint: 'cable' },
+  { id: 'barbell_shrug', name: 'Barbell Shrug', short: 'Shrug', bodyPart: 'Back', group: 'upper', kind: 'isolation', confidence: 'HIGH', ratios: [0.5, 1.0, 1.5, 2.25, 3.25], addedLoad: false, perHand: false },
+  { id: 'rack_pull', name: 'Rack Pull', short: 'Rack Pull', bodyPart: 'Back', group: 'lower', kind: 'compound', confidence: 'HIGH', ratios: [1.0, 1.75, 2.25, 3.0, 4.0], addedLoad: false, perHand: false },
 
   /* ----------------------------- ARMS (upper) ----------------------------- */
   { id: 'barbell_curl', name: 'Barbell Curl', short: 'BB Curl', bodyPart: 'Arms', group: 'upper', kind: 'isolation', confidence: 'MED', ratios: [0.2, 0.4, 0.6, 0.85, 1.15], addedLoad: false, perHand: false },
@@ -116,6 +132,11 @@ const DEFS: Def[] = [
   { id: 'tricep_pushdown', name: 'Tricep Pushdown', short: 'Pushdown', bodyPart: 'Arms', group: 'upper', kind: 'isolation', confidence: 'MED', ratios: [0.25, 0.5, 0.75, 1.0, 1.5], addedLoad: false, perHand: false, hint: 'cable' },
   { id: 'skullcrusher', name: 'Skullcrusher', short: 'Skulls', bodyPart: 'Arms', group: 'upper', kind: 'isolation', confidence: 'MED', ratios: [0.2, 0.35, 0.55, 0.8, 1.1], addedLoad: false, perHand: false },
   { id: 'overhead_tricep_extension', name: 'Overhead Tricep Extension', short: 'OH Tricep', bodyPart: 'Arms', group: 'upper', kind: 'isolation', confidence: 'MED', ratios: [0.15, 0.35, 0.65, 1.0, 1.4], addedLoad: false, perHand: false, hint: 'cable / dumbbell' },
+  { id: 'close_grip_bench_press', name: 'Close-Grip Bench Press', short: 'CGBP', bodyPart: 'Arms', group: 'upper', kind: 'compound', confidence: 'HIGH', ratios: [0.5, 0.75, 1.25, 1.5, 2.0], addedLoad: false, perHand: false },
+  { id: 'preacher_curl', name: 'Preacher Curl', short: 'Preacher', bodyPart: 'Arms', group: 'upper', kind: 'isolation', confidence: 'MED', ratios: [0.2, 0.35, 0.6, 0.85, 1.1], addedLoad: false, perHand: false },
+  { id: 'ez_bar_curl', name: 'EZ-Bar Curl', short: 'EZ Curl', bodyPart: 'Arms', group: 'upper', kind: 'isolation', confidence: 'MED', ratios: [0.25, 0.4, 0.6, 0.85, 1.1], addedLoad: false, perHand: false },
+  { id: 'incline_dumbbell_curl', name: 'Incline Dumbbell Curl', short: 'Inc. Curl', bodyPart: 'Arms', group: 'upper', kind: 'isolation', confidence: 'MED', ratios: [0.1, 0.15, 0.25, 0.4, 0.55], addedLoad: false, perHand: true, hint: 'per dumbbell' },
+  { id: 'concentration_curl', name: 'Concentration Curl', short: 'Conc. Curl', bodyPart: 'Arms', group: 'upper', kind: 'isolation', confidence: 'MED', ratios: [0.1, 0.15, 0.3, 0.45, 0.6], addedLoad: false, perHand: true, hint: 'per dumbbell' },
 ];
 
 /** Extra fuzzy-search terms so common phrasings find the lift. */
@@ -147,20 +168,41 @@ const ALIASES: Record<LiftId, string[]> = {
   machine_shoulder_press: ['shoulder press machine'],
   arnold_press: ['arnold'],
   lateral_raise: ['lateral', 'lat raise', 'side raise', 'side delt', 'laterals'],
-  barbell_row: ['row', 'bent over row', 'bent-over row', 'bor', 'pendlay'],
+  barbell_row: ['row', 'bent over row', 'bent-over row', 'bor'],
   dumbbell_row: ['db row', 'one arm row'],
   t_bar_row: ['tbar', 't bar'],
   lat_pulldown: ['pulldown', 'lats', 'lat pull'],
   seated_cable_row: ['cable row', 'seated row'],
   weighted_pullup: ['pullup', 'pull up', 'pull-up', 'chin up', 'chinup'],
   face_pull: ['facepull', 'rear delt'],
-  barbell_curl: ['curl', 'bb curl', 'bicep curl', 'biceps', 'ez curl'],
+  barbell_curl: ['curl', 'bb curl', 'bicep curl', 'biceps'],
   dumbbell_curl: ['db curl', 'dumbbell bicep'],
   hammer_curl: ['hammer', 'hammers'],
   cable_curl: ['cable bicep'],
   tricep_pushdown: ['pushdown', 'tricep', 'triceps', 'rope pushdown', 'cable pushdown'],
   skullcrusher: ['skull crusher', 'skulls', 'lying tricep', 'lying triceps extension', 'ez tricep'],
   overhead_tricep_extension: ['overhead tricep', 'tricep extension', 'overhead extension'],
+  deficit_deadlift: ['deficit', 'deficit dl'],
+  box_squat: ['box', 'box sq'],
+  dumbbell_lunge: ['lunge', 'lunges', 'walking lunge', 'db lunge', 'reverse lunge'],
+  seated_calf_raise: ['calf raise', 'calf', 'calves', 'seated calf', 'calf raises'],
+  decline_bench_press: ['decline', 'decline bench'],
+  smith_machine_bench_press: ['smith bench', 'smith machine bench'],
+  dumbbell_fly: ['db fly', 'dumbbell flye', 'chest fly', 'flyes', 'flys'],
+  upright_row: ['upright', 'upright rows'],
+  front_raise: ['front delt', 'front raises', 'db front raise'],
+  rear_delt_fly: ['rear delt', 'reverse fly', 'rear fly', 'reverse flye', 'rear delt raise'],
+  pendlay_row: ['pendlay', 'pendlay rows'],
+  chest_supported_row: ['chest supported', 'chest-supported', 'seal row', 'csr'],
+  machine_row: ['seated machine row', 'hammer row'],
+  straight_arm_pulldown: ['straight arm', 'straight-arm', 'lat pushdown', 'straight arm pushdown'],
+  barbell_shrug: ['shrug', 'shrugs', 'traps', 'dumbbell shrug', 'db shrug'],
+  rack_pull: ['rack', 'rackpull', 'partial deadlift'],
+  close_grip_bench_press: ['close grip', 'close-grip', 'cgbp', 'close grip bench'],
+  preacher_curl: ['preacher'],
+  ez_bar_curl: ['ez bar', 'ez curl', 'ezbar'],
+  incline_dumbbell_curl: ['incline curl', 'incline db curl'],
+  concentration_curl: ['concentration', 'conc curl'],
 };
 
 /** Composite weight (A4): HIGH compound full, MED compound ×0.75, isolation low. */
