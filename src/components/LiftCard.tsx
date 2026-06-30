@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useQuiz } from '../state/QuizContext';
 import { MAX_REPS, isLiftEntered, parseNum } from '../state/quizReducer';
-import { LIFT_BY_ID, TIER_COLOR, customName, isCustom, type LiftId } from '../data/standards';
+import { LIFT_BY_ID, TIER_COLOR, customName, isCustom, isScored, type LiftId } from '../data/standards';
 import { oneRM, scoreLift } from '../lib/scoring';
 import { formatWeight, fromKg, toKg, type Unit } from '../lib/units';
 import { trackEvent, trackEventOnce } from '../lib/analytics';
@@ -20,6 +20,8 @@ export function LiftCard({ id }: { id: LiftId }) {
   const custom = isCustom(id);
   const meta = custom ? null : LIFT_BY_ID[id];
   const draft = state.lifts[id]!;
+  // Tracked-only: a real catalog lift with no verified standard — logged, never ranked.
+  const ranked = !custom && isScored(id);
 
   const name = custom ? customName(id) : meta!.name;
   const addedLoad = !custom && meta!.addedLoad;
@@ -29,7 +31,7 @@ export function LiftCard({ id }: { id: LiftId }) {
   const weightNum = parseNum(draft.weight);
   const bwKg = toKg(parseNum(state.bodyweight), state.unit);
   const hasWeight = Number.isFinite(weightNum) && (addedLoad ? weightNum >= 0 : weightNum > 0);
-  const canScore = !custom && hasWeight && state.sex && bwKg > 0 && Number.isFinite(parseNum(state.age));
+  const canScore = ranked && hasWeight && state.sex && bwKg > 0 && Number.isFinite(parseNum(state.age));
 
   let readout: ReactNode = null;
   if (canScore) {
@@ -60,7 +62,7 @@ export function LiftCard({ id }: { id: LiftId }) {
         <p className={`mt-1 text-[12px] ${affirm.cls}`}>{affirm.text}</p>
       </>
     );
-  } else if (custom) {
+  } else if (!ranked) {
     readout = <p className="font-mono mt-2.5 text-[13px] text-textmut">Logged — won’t affect your rank.</p>;
   }
 
@@ -95,9 +97,9 @@ export function LiftCard({ id }: { id: LiftId }) {
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
             <span className="font-mono text-sm font-bold uppercase tracking-wide text-text">{name}</span>
-            {custom && (
+            {!ranked && (
               <span className="font-mono rounded bg-raised px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-textmut">
-                not ranked
+                tracked · not ranked
               </span>
             )}
           </div>

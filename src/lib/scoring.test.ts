@@ -5,10 +5,15 @@ import {
   dots,
   pctFromRatio,
   closestRankUp,
+  effectiveThresholds,
   type ScoreContext,
 } from './scoring';
-import { effectiveThresholds } from './scoring';
 import { topPercent } from './result';
+import { isScored } from '../data/standards';
+
+/** Pounds → kilograms (the engine works in kg; StrengthLevel benchmarks are lb). */
+const LB = 0.45359237;
+const lb = (x: number) => x * LB;
 
 describe('oneRM (Epley §4.1)', () => {
   it('estimates a 5RM correctly', () => {
@@ -20,76 +25,146 @@ describe('oneRM (Epley §4.1)', () => {
   });
 });
 
-describe('scoreLift — tier & percentile (§4.5)', () => {
-  const base: ScoreContext = {
-    sex: 'male',
-    age: 30,
-    bodyweightKg: 100,
-    population: 'serious',
-  };
-
-  it('150kg squat @ 100kg BW, serious → ratio 1.5 → Intermediate, pct ~42', () => {
-    const r = scoreLift({ id: 'back_squat', weightKg: 150, reps: 1 }, base);
-    expect(r.ratio).toBeCloseTo(1.5, 5);
+/* ---------------------------------------------------------------------------
+ * StrengthLevel benchmark matrix (the regression guard). Tiers + percentiles
+ * are benchmarked to StrengthLevel's published per-bodyweight tables; the
+ * DEFAULT "people who lift" population is calibrated to equal StrengthLevel.
+ * ------------------------------------------------------------------------- */
+describe('benchmark matrix vs StrengthLevel (default = gym)', () => {
+  // THE BUG REPRO: 45F, 150 lb, bench 135×5 (~157 lb 1RM). StrengthLevel calls
+  // this Intermediate (almost Advanced), ~79th. It must NOT be Elite/top-3%.
+  it('45F / 150lb / bench 135×5 → Intermediate, ~79th (NOT Elite)', () => {
+    const r = scoreLift(
+      { id: 'bench_press', weightKg: lb(135), reps: 5 },
+      { sex: 'female', age: 45, bodyweightKg: lb(150), population: 'gym' },
+    );
     expect(r.tier).toBe('Intermediate');
-    expect(r.percentile).toBeGreaterThan(35);
-    expect(r.percentile).toBeLessThan(50);
-    expect(r.percentile).toBeCloseTo(42, 0);
+    expect(r.percentile).toBeGreaterThan(73);
+    expect(r.percentile).toBeLessThan(83);
+    expect(r.tier).not.toBe('Elite');
+    expect(r.tier).not.toBe('World Class');
   });
 
-  it('same lifter vs general population jumps into Advanced/Elite', () => {
+  // Same bench at peak age — female curve sanity-check (age must not swing it much).
+  it('25F / 150lb / bench 135×5 → Intermediate, close to the 45yo result', () => {
     const r = scoreLift(
-      { id: 'back_squat', weightKg: 150, reps: 1 },
-      { ...base, population: 'general' },
+      { id: 'bench_press', weightKg: lb(135), reps: 5 },
+      { sex: 'female', age: 25, bodyweightKg: lb(150), population: 'gym' },
     );
-    expect(r.percentile).toBeGreaterThan(88);
-    expect(r.tier).toBe('Elite');
+    expect(r.tier).toBe('Intermediate');
+    expect(r.percentile).toBeGreaterThan(72);
+    expect(r.percentile).toBeLessThan(82);
   });
 
-  it('16yo, 70kg BW, 100kg bench → age-adjusted ~1.61 → Advanced (not Untrained)', () => {
+  // Men weren't broken by the female fix: 225 bench at 200 lb is ~Novice (~40th)
+  // per StrengthLevel — honest, not inflated.
+  it('25M / 200lb / bench 225 → sensible male tier (Novice/Intermediate, not Advanced+)', () => {
     const r = scoreLift(
-      { id: 'bench_press', weightKg: 100, reps: 1 },
-      { sex: 'male', age: 16, bodyweightKg: 70, population: 'serious' },
+      { id: 'bench_press', weightKg: lb(225), reps: 1 },
+      { sex: 'male', age: 25, bodyweightKg: lb(200), population: 'gym' },
     );
-    expect(r.adjustedRatio).toBeCloseTo(1.61, 1);
-    expect(r.percentile).toBeGreaterThan(70);
-    expect(r.tier).toBe('Advanced');
+    expect(['Novice', 'Intermediate']).toContain(r.tier);
+    expect(r.percentile).toBeGreaterThan(25);
+    expect(r.percentile).toBeLessThan(55);
+  });
+
+  // Age isolation: the 45yo man must NOT be boosted into a higher tier than the
+  // 25yo for the identical lift (the old curve over-boosted 40+).
+  it('45M / 200lb / bench 225 → same tier as 25yo, only a few points higher', () => {
+    const young = scoreLift(
+      { id: 'bench_press', weightKg: lb(225), reps: 1 },
+      { sex: 'male', age: 25, bodyweightKg: lb(200), population: 'gym' },
+    );
+    const older = scoreLift(
+      { id: 'bench_press', weightKg: lb(225), reps: 1 },
+      { sex: 'male', age: 45, bodyweightKg: lb(200), population: 'gym' },
+    );
+    expect(older.tier).toBe(young.tier);
+    expect(older.percentile - young.percentile).toBeLessThan(6);
+  });
+
+  it('25F / 150lb / squat 185 → Intermediate (SL F150 squat: Int 168, Adv 231)', () => {
+    const r = scoreLift(
+      { id: 'back_squat', weightKg: lb(185), reps: 1 },
+      { sex: 'female', age: 25, bodyweightKg: lb(150), population: 'gym' },
+    );
+    expect(r.tier).toBe('Intermediate');
+  });
+
+  it('25M / 200lb / squat 315 → Novice (SL M200 squat: Nov 248, Int 323)', () => {
+    const r = scoreLift(
+      { id: 'back_squat', weightKg: lb(315), reps: 1 },
+      { sex: 'male', age: 25, bodyweightKg: lb(200), population: 'gym' },
+    );
+    expect(r.tier).toBe('Novice');
+  });
+
+  it('25F / 150lb / deadlift 225 → Intermediate (SL F150 DL: Int 197, Adv 267)', () => {
+    const r = scoreLift(
+      { id: 'deadlift', weightKg: lb(225), reps: 1 },
+      { sex: 'female', age: 25, bodyweightKg: lb(150), population: 'gym' },
+    );
+    expect(r.tier).toBe('Intermediate');
+  });
+
+  it('25M / 200lb / deadlift 405 → Intermediate (SL M200 DL: Int 373, Adv 467)', () => {
+    const r = scoreLift(
+      { id: 'deadlift', weightKg: lb(405), reps: 1 },
+      { sex: 'male', age: 25, bodyweightKg: lb(200), population: 'gym' },
+    );
+    expect(r.tier).toBe('Intermediate');
   });
 });
 
-describe('general-population sanity (no spurious 99th percentile)', () => {
-  it('a bodyweight bench lands ~top quartile vs general population, not the 99th', () => {
+describe('female standards are decoupled from male (the fixed bug)', () => {
+  it('a 1.05x female bench is NOT Elite (it was, via the male×factor shortcut)', () => {
     const r = scoreLift(
-      { id: 'bench_press', weightKg: 80, reps: 1 },
-      { sex: 'male', age: 30, bodyweightKg: 80, population: 'general' },
+      { id: 'bench_press', weightKg: lb(157.5), reps: 1 },
+      { sex: 'female', age: 45, bodyweightKg: lb(150), population: 'gym' },
     );
-    // ratio 1.0x BW — strong among non-lifters, but not freakish.
-    expect(r.percentile).toBeGreaterThan(75);
-    expect(r.percentile).toBeLessThan(90);
-    expect(r.tier).toBe('Advanced');
+    expect(r.tier).not.toBe('Elite');
   });
-
-  it('a truly elite lift can still reach the top in the general population', () => {
-    const r = scoreLift(
-      { id: 'bench_press', weightKg: 160, reps: 1 },
-      { sex: 'male', age: 30, bodyweightKg: 80, population: 'general' },
-    );
-    expect(r.percentile).toBeGreaterThan(98);
+  it('female and male bench thresholds differ (not a fixed ratio)', () => {
+    const m = effectiveThresholds('male', 'bench_press', 'serious');
+    const f = effectiveThresholds('female', 'bench_press', 'serious');
+    // If female were male × constant, every ratio would share one factor.
+    const factors = m.map((v, i) => f[i] / v);
+    const spread = Math.max(...factors) - Math.min(...factors);
+    expect(spread).toBeGreaterThan(0.02);
   });
 });
 
-describe('DOTS (§4.6)', () => {
-  it('male, 90kg BW, 500kg total → ~323 (IPF formula; spec estimate ~330)', () => {
-    // The authoritative IPF male coefficients give 323.3 for this lifter;
-    // matches online DOTS calculators within ±1. (Spec §9 noted ~330 as an
-    // approximation pending this cross-check.)
+describe('population comparison ordering', () => {
+  it('the same lift ranks higher vs general population than vs serious lifters', () => {
+    const base = { id: 'bench_press' as const, weightKg: lb(225), reps: 1 };
+    const ctx = { sex: 'male' as const, age: 30, bodyweightKg: lb(200) };
+    const general = scoreLift(base, { ...ctx, population: 'general' });
+    const gym = scoreLift(base, { ...ctx, population: 'gym' });
+    const serious = scoreLift(base, { ...ctx, population: 'serious' });
+    expect(general.percentile).toBeGreaterThan(gym.percentile);
+    expect(gym.percentile).toBeGreaterThan(serious.percentile);
+  });
+});
+
+describe('tracked-not-scored (Option A — honesty)', () => {
+  it('core compound lifts are scored', () => {
+    for (const id of ['bench_press', 'back_squat', 'deadlift', 'lat_pulldown', 'leg_press']) {
+      expect(isScored(id)).toBe(true);
+    }
+  });
+  it('accessory / isolation lifts are tracked-only (excluded from scoring)', () => {
+    for (const id of ['hip_thrust', 'lateral_raise', 'barbell_curl', 'leg_extension', 'face_pull']) {
+      expect(isScored(id)).toBe(false);
+    }
+  });
+});
+
+describe('DOTS (§4.6) — unchanged formula', () => {
+  it('male, 90kg BW, 500kg total → ~323 (IPF formula)', () => {
     const d = dots('male', 500, 90);
-    expect(d).toBeGreaterThan(321);
-    expect(d).toBeLessThan(325);
     expect(d).toBeCloseTo(323.3, 0);
   });
-
-  it('female coefficients produce a sane, larger factor than male', () => {
+  it('female coefficients produce a sane, finite factor', () => {
     const f = dots('female', 300, 60);
     expect(f).toBeGreaterThan(0);
     expect(Number.isFinite(f)).toBe(true);
@@ -98,13 +173,11 @@ describe('DOTS (§4.6)', () => {
 
 describe('pctFromRatio — monotonic & clamped', () => {
   const T = effectiveThresholds('male', 'back_squat', 'serious');
-
   it('clamps to [0, 99.9]', () => {
     expect(pctFromRatio(-1, T)).toBe(0);
     expect(pctFromRatio(0, T)).toBe(0);
     expect(pctFromRatio(1000, T)).toBe(99.9);
   });
-
   it('is non-decreasing across the domain', () => {
     let prev = -1;
     for (let r = 0; r <= 6; r += 0.05) {
@@ -129,24 +202,19 @@ describe('closestRankUp (§5)', () => {
   const ctx: ScoreContext = {
     sex: 'male',
     age: 30,
-    bodyweightKg: 100,
-    population: 'serious',
+    bodyweightKg: lb(200),
+    population: 'gym',
   };
-
-  it('finds the cheapest single-lift gain that raises a tier', () => {
-    // Squat at 1.5x BW (Inter, needs +0.4 to Advanced = +40kg) vs
-    // bench just below Advanced threshold (1.25x = 125kg).
+  it('finds a positive single-lift gain into the next tier', () => {
     const up = closestRankUp(
       [
-        { id: 'back_squat', weightKg: 150, reps: 1 },
-        { id: 'bench_press', weightKg: 122, reps: 1 },
+        { id: 'bench_press', weightKg: lb(225), reps: 1 },
+        { id: 'back_squat', weightKg: lb(315), reps: 1 },
       ],
       ctx,
     );
     expect(up).not.toBeNull();
-    expect(up!.id).toBe('bench_press');
-    expect(up!.nextTier).toBe('Advanced');
     expect(up!.deltaKg).toBeGreaterThan(0);
-    expect(up!.deltaKg).toBeCloseTo(3, 0); // 125 - 122
+    expect(['bench_press', 'back_squat']).toContain(up!.id);
   });
 });

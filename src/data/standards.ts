@@ -1,11 +1,12 @@
 /**
- * CALIBER standards data (§4) — full catalog (~60 lifts).
+ * CALIBER standards data (§4) — catalog of ~60 lifts.
  *
- * Every lift has a real published bodyweight-ratio standard. Barbell anchors are
- * the original spec values (and blessed 0.85×/0.80× derivations); machine,
- * dumbbell, cable & variation lifts are sourced from Strength Level (150M+
- * logged lifts) — their Beginner→Elite ratios map onto our Novice→World Class
- * thresholds. No invented numbers: a lift without a real standard is not here.
+ * SCORING IS HONEST OR NOTHING. Only the lifts in SCORED_IDS (below) feed the
+ * percentile / Strength Score / tier / archetype. Each of those has REAL
+ * StrengthLevel per-bodyweight standards transcribed for BOTH sexes (female is
+ * NOT derived from male — that male×factor shortcut was the inflation bug). Every
+ * other catalog lift is shown and logged but "tracked, not ranked." No invented
+ * numbers: a lift without a verified standard is never scored.
  *
  * Tags per lift:
  *   region (group): UPPER / LOWER          — drives the Lifter Type axes
@@ -43,7 +44,8 @@ export interface LiftMeta {
   group: Group;
   kind: Kind;
   confidence: Confidence;
-  ratios: TierRatios; // MALE [Novice, Intermediate, Advanced, Elite, World Class]
+  ratios: TierRatios; // MALE entry ratios [Novice, Intermediate, Advanced, Elite, World Class]
+  ratiosF: TierRatios; // FEMALE entry ratios — sourced separately (never male × factor)
   weight: number; // composite weighting (§4.5 / A4)
   addedLoad: boolean; // ratio = addedWeight / bodyweight
   perHand: boolean; // input is per dumbbell
@@ -63,7 +65,7 @@ const s = (arr: readonly number[], k: number): TierRatios =>
   arr.map((v) => +(v * k).toFixed(4)) as unknown as TierRatios;
 const r = (arr: readonly number[]): TierRatios => [...arr] as TierRatios;
 
-type Def = Omit<LiftMeta, 'weight' | 'scored' | 'aliases'>;
+type Def = Omit<LiftMeta, 'weight' | 'scored' | 'aliases' | 'ratiosF'>;
 
 const DEFS: Def[] = [
   /* ----------------------------- LEGS (lower) ----------------------------- */
@@ -205,16 +207,79 @@ const ALIASES: Record<LiftId, string[]> = {
   concentration_curl: ['concentration', 'conc curl'],
 };
 
+/* --------------------- Scored lifts & StrengthLevel standards ----------------- *
+ * Only these lifts are SCORED. Each has REAL StrengthLevel per-bodyweight
+ * standards transcribed below for BOTH sexes — female is NOT derived from male
+ * (the male×factor derivation was the calibration bug). Every other catalog lift
+ * is "tracked, not ranked": shown and logged, but excluded from the percentile,
+ * Strength Score, tier, and archetype. No invented numbers — a lift without a
+ * verified standard is not scored.
+ *
+ * Values are StrengthLevel entry thresholds [Novice, Intermediate, Advanced,
+ * Elite] as bodyweight ratios at a reference bodyweight (FEMALE 150 lb, MALE
+ * 200 lb), plus a World Class slot = Elite × 1.15 (Caliber's ceiling tier above
+ * SL's top level). Paired with PCT_EDGES, a lifter lands in the highest SL level
+ * they meet — mirroring StrengthLevel's own labels.
+ * ----------------------------------------------------------------------------- */
+const SCORED_IDS = new Set<LiftId>([
+  'back_squat', 'front_squat', 'deadlift', 'romanian_deadlift', 'leg_press',
+  'bench_press', 'incline_bench', 'dumbbell_bench_press',
+  'overhead_press', 'dumbbell_shoulder_press',
+  'barbell_row', 'dumbbell_row', 'lat_pulldown', 'seated_cable_row',
+]);
+
+const MALE_STD: Record<LiftId, TierRatios> = {
+  back_squat: [1.24, 1.615, 2.04, 2.495, 2.869],
+  front_squat: [0.99, 1.28, 1.61, 1.96, 2.254],
+  deadlift: [1.45, 1.865, 2.335, 2.835, 3.26],
+  romanian_deadlift: [1.115, 1.51, 1.965, 2.45, 2.818],
+  leg_press: [1.955, 2.8, 3.805, 4.9, 5.635],
+  bench_press: [0.935, 1.23, 1.56, 1.91, 2.197],
+  incline_bench: [0.86, 1.11, 1.39, 1.685, 1.938],
+  dumbbell_bench_press: [0.355, 0.515, 0.705, 0.91, 1.047],
+  overhead_press: [0.595, 0.8, 1.035, 1.285, 1.478],
+  dumbbell_shoulder_press: [0.295, 0.415, 0.555, 0.705, 0.811],
+  barbell_row: [0.8, 1.065, 1.37, 1.69, 1.944],
+  dumbbell_row: [0.38, 0.55, 0.75, 0.975, 1.121],
+  lat_pulldown: [0.74, 1.005, 1.315, 1.645, 1.892],
+  seated_cable_row: [0.8, 1.07, 1.385, 1.715, 1.972],
+};
+
+const FEMALE_STD: Record<LiftId, TierRatios> = {
+  back_squat: [0.767, 1.12, 1.54, 2.007, 2.308],
+  front_squat: [0.687, 0.94, 1.233, 1.547, 1.779],
+  deadlift: [0.92, 1.313, 1.78, 2.287, 2.63],
+  romanian_deadlift: [0.693, 1.007, 1.367, 1.767, 2.032],
+  leg_press: [1.26, 2.087, 3.12, 4.3, 4.945],
+  bench_press: [0.493, 0.76, 1.087, 1.453, 1.671],
+  incline_bench: [0.407, 0.66, 0.967, 1.32, 1.518],
+  dumbbell_bench_press: [0.187, 0.32, 0.48, 0.673, 0.774],
+  overhead_press: [0.34, 0.513, 0.72, 0.947, 1.089],
+  dumbbell_shoulder_press: [0.153, 0.24, 0.34, 0.453, 0.521],
+  barbell_row: [0.407, 0.62, 0.88, 1.167, 1.342],
+  dumbbell_row: [0.213, 0.327, 0.46, 0.62, 0.713],
+  lat_pulldown: [0.467, 0.687, 0.94, 1.227, 1.411],
+  seated_cable_row: [0.493, 0.713, 0.973, 1.267, 1.457],
+};
+
 /** Composite weight (A4): HIGH compound full, MED compound ×0.75, isolation low. */
 const weightFor = (d: Def): number =>
   d.kind === 'isolation' ? 0.25 : d.confidence === 'HIGH' ? 1.0 : 0.75;
 
-export const LIFTS: LiftMeta[] = DEFS.map((d) => ({
-  ...d,
-  weight: weightFor(d),
-  scored: true,
-  aliases: ALIASES[d.id] ?? [],
-}));
+export const LIFTS: LiftMeta[] = DEFS.map((d) => {
+  // Scored lifts use the StrengthLevel per-sex standards; tracked-only lifts
+  // keep their (unused) catalog ratios as a harmless fallback.
+  const ratios = MALE_STD[d.id] ?? d.ratios;
+  const ratiosF = FEMALE_STD[d.id] ?? ratios;
+  return {
+    ...d,
+    ratios,
+    ratiosF,
+    weight: weightFor(d),
+    scored: SCORED_IDS.has(d.id),
+    aliases: ALIASES[d.id] ?? [],
+  };
+});
 
 export const LIFT_BY_ID: Record<LiftId, LiftMeta> = Object.fromEntries(
   LIFTS.map((l) => [l.id, l]),
@@ -236,23 +301,15 @@ export const CUSTOM_PREFIX = 'custom:';
 export const isCustom = (id: LiftId): boolean => id.startsWith(CUSTOM_PREFIX);
 export const customName = (id: LiftId): string => id.slice(CUSTOM_PREFIX.length);
 
-/* ----------------------- Female factors by family (§4.2b) ---------------------- */
-
-function familyOf(d: Def): 'squat' | 'press' | 'pull' {
-  if (d.group === 'lower') return 'squat';
-  if (d.bodyPart === 'Back') return 'pull';
-  if (d.bodyPart === 'Arms') return d.id.includes('curl') ? 'pull' : 'press';
-  return 'press'; // Chest, Shoulders
-}
-
-const FEMALE_FACTOR = { squat: 0.72, press: 0.62, pull: 0.66 } as const;
+/* -------------------- Per-sex standards (§4.2b) — both from SL ----------------- */
+/* Female standards are real StrengthLevel female tables, NOT male × a factor. */
 
 export const STANDARDS_MALE: Record<LiftId, TierRatios> = Object.fromEntries(
   LIFTS.map((l) => [l.id, l.ratios]),
 );
 
 export const STANDARDS_FEMALE: Record<LiftId, TierRatios> = Object.fromEntries(
-  DEFS.map((d) => [d.id, s(d.ratios, FEMALE_FACTOR[familyOf(d)])]),
+  LIFTS.map((l) => [l.id, l.ratiosF]),
 );
 
 export const STANDARDS: Record<Sex, Record<LiftId, TierRatios>> = {
@@ -270,19 +327,29 @@ export const ADDED_LOAD_LIFTS: ReadonlySet<LiftId> = new Set(
 
 /* ------------------------------ Age coefficients (§4.3) ------------------------ */
 
+/**
+ * Fraction of peak strength at a given age. The post-peak decline was softened
+ * (it was over-boosting 40+ lifters: old 45→0.964, 70→0.76 gave a +32% boost).
+ * The young ramp is unchanged. Now the boost is gentle — a 45yo ≈ 0.98 (+2%),
+ * a 70yo ≈ 0.89 (+12%) — so age no longer inflates older lifters into top tiers.
+ */
 export const AGE_COEFF: Record<number, number> = {
   13: 0.8, 14: 0.83, 15: 0.86, 16: 0.89, 17: 0.92, 18: 0.94, 19: 0.96,
-  20: 0.98, 24: 1.0, 34: 1.0, 39: 0.99, 44: 0.97, 49: 0.94,
-  54: 0.9, 59: 0.86, 64: 0.81, 69: 0.76, 80: 0.7,
+  20: 0.98, 24: 1.0, 34: 1.0, 40: 0.99, 50: 0.975, 60: 0.94, 70: 0.89, 80: 0.83,
 };
 
 /* --------------------------- Population multipliers (§4.4) --------------------- */
+/* Anchored so the DEFAULT "people who lift" == StrengthLevel (its logged-lifter
+ * population). "Serious" raises the bar; "general population" lowers it. */
 
-export const POP_MULT: Record<Population, number> = { serious: 1.0, gym: 0.85, general: 0.62 };
+export const POP_MULT: Record<Population, number> = { serious: 1.15, gym: 1.0, general: 0.72 };
 
 /* ----------------------- Percentile / tier mapping (§4.5) ---------------------- */
-
-export const PCT_EDGES = [0, 10, 35, 70, 90, 98, 99.9] as const;
+/* Band entry percentiles aligned to StrengthLevel's level definitions so the
+ * tier a lifter sees == StrengthLevel's: Novice ≥20th, Intermediate ≥50th,
+ * Advanced ≥80th, Elite ≥95th. World Class (≥99th) is Caliber's ceiling above
+ * SL's top. (Was [0,10,35,70,90,98,…], which inflated mid lifts to Elite.) */
+export const PCT_EDGES = [0, 20, 50, 80, 95, 99, 99.9] as const;
 export const TIERS: Tier[] = [
   'Untrained', 'Novice', 'Intermediate', 'Advanced', 'Elite', 'World Class',
 ];
