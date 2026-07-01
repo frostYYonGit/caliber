@@ -10,6 +10,12 @@
  *
  * Rarity %, thresholds, colors and icons here are an editorial draft (no
  * companion file existed) — tune freely.
+ *
+ * NO TYPE IS A LOSER. Every archetype must read as fun, cool, or aspirational —
+ * something a person would happily claim and post. The imbalanced ones (Glass
+ * Cannon, The Mule) are self-aware jokes, never mean; Prospect (the low-end
+ * result most beginners get) is framed as pure upside, never "you're weak."
+ * The identity is generous; the underlying numbers stay honest.
  */
 
 export type ArchetypeId =
@@ -47,10 +53,10 @@ export const ARCHETYPES: Record<ArchetypeId, Archetype> = {
     telemetry: 'EARLY',
     tagline: 'Nothing but runway.',
     description:
-      "You're early, and the numbers say so — but every strong lifter stood exactly here first. The foundation is still being poured. The next year decides everything.",
+      'Every strong lifter on this list started exactly here. What sets a Prospect apart isn’t the number today — it’s how much road is left, and you’ve got more of it than anyone. The foundation is being poured. The next year is the fun part.',
     flex: 'More upside than anyone in the room.',
-    flaw: 'Nothing proven yet.',
-    rarity: 'Roughly 40% of lifters are still Prospects.',
+    flaw: 'No PRs to brag about — yet.',
+    rarity: 'Roughly 40% of lifters start right here.',
     rival: 'different_breed',
     color: '#5FD08A',
     glow: 0.4,
