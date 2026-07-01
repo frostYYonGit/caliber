@@ -108,7 +108,7 @@ export function ShareActions({
 
   const saveStory = async () => {
     if (!storyRef.current) return;
-    trackEvent('story_clicked', shareEventProps(result));
+    trackEvent('story_clicked', { ...shareEventProps(result), has_opponent: !!opponent });
     setBusy('story');
     try {
       const url = await nodeToPng(storyRef.current, 1);
@@ -138,10 +138,10 @@ export function ShareActions({
       {/* Secondary — save the card / story */}
       <div className="mt-2 grid grid-cols-2 gap-2">
         <button onClick={savePng} disabled={busy !== null} className={secondary}>
-          {busy === 'png' ? '…' : opponent ? '↓ Save this' : '↓ Save card'}
+          {busy === 'png' ? '…' : '↓ Save image'}
         </button>
         <button onClick={saveStory} disabled={busy !== null} className={secondary}>
-          {busy === 'story' ? '…' : '✦ Story'}
+          {busy === 'story' ? '…' : '✦ Story · 9:16'}
         </button>
       </div>
 
@@ -151,7 +151,7 @@ export function ShareActions({
 
       {/* Off-screen 1080×1920 node used only for the story export. */}
       <div aria-hidden style={{ position: 'fixed', left: -99999, top: 0, pointerEvents: 'none' }}>
-        <StoryCard ref={storyRef} result={result} />
+        <StoryCard ref={storyRef} result={result} opponent={opponent} />
       </div>
     </div>
   );
