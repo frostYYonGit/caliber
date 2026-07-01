@@ -104,6 +104,57 @@ export function decodeResult(params: URLSearchParams): IronRankResult | null {
   return buildResult(input);
 }
 
+/* --------------------------- Challenge / head-to-head ------------------------- *
+ * The peer loop runs entirely on URL state — no accounts, no backend.
+ *   /r?<X>            → X's result (solo)
+ *   /r?<X>&vs=<Y>     → X-vs-Y head-to-head (Y encoded into one param)
+ *   ...&c=1           → framed as a challenge to the opener ("beat this")
+ * ----------------------------------------------------------------------------- */
+
+const VS = 'vs';
+const CHALLENGE = 'c';
+
+/** True when the link was sent as a challenge ("beat this"), not a plain result. */
+export function isChallenge(params: URLSearchParams): boolean {
+  return params.get(CHALLENGE) === '1';
+}
+
+/** Decode the opponent carried in a head-to-head link (the `vs` blob), or null. */
+export function decodeOpponent(params: URLSearchParams): IronRankResult | null {
+  const raw = params.get(VS);
+  if (!raw) return null;
+  try {
+    return decodeResult(new URLSearchParams(raw));
+  } catch {
+    return null;
+  }
+}
+
+/** `/r?...` path for a result, carrying an opponent for the head-to-head view. */
+export function resultPathVs(result: IronRankResult, opponent: IronRankResult | null): string {
+  const base = resultPath(result);
+  return opponent ? `${base}&${VS}=${encodeURIComponent(encodeResult(opponent))}` : base;
+}
+
+/** Full shareable link (no challenge flag). Carries an opponent if head-to-head. */
+export function shareLink(
+  result: IronRankResult,
+  origin: string,
+  opponent?: IronRankResult | null,
+): string {
+  const base = resultUrl(result, origin);
+  return opponent ? `${base}&${VS}=${encodeURIComponent(encodeResult(opponent))}` : base;
+}
+
+/** The challenge link — a shareable link flagged so the opener is dared to beat it. */
+export function challengeLink(
+  result: IronRankResult,
+  origin: string,
+  opponent?: IronRankResult | null,
+): string {
+  return `${shareLink(result, origin, opponent)}&${CHALLENGE}=1`;
+}
+
 export function readDenorm(params: URLSearchParams): Denorm | null {
   const sc = Number(params.get('sc'));
   if (!Number.isFinite(sc)) return null;

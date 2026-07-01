@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useState } from 'react';
-import { APP_NAME, HANDLE, TAGLINE, shareHost } from '../config';
+import { APP_NAME, HANDLE, shareHost } from '../config';
 import { LIFT_BY_ID, TIER_COLOR, TIER_GLOW, TIER_VERDICT, isCompound } from '../data/standards';
 import { ARCHETYPES, ARCHETYPE_SHOWCASE } from '../data/archetypes';
 import { topPercent, type IronRankResult } from '../lib/result';
@@ -245,10 +245,10 @@ export const ResultCard = forwardRef<HTMLDivElement, Props>(function ResultCard(
         ))}
       </div>
 
-      {/* Footer — the invitation + branding for reposts */}
+      {/* Footer — the challenge + branding for reposts */}
       <div className="mt-3 border-t border-line pt-3">
-        <p className="font-display text-center text-[15px] font-extrabold tracking-tight" style={{ color }}>
-          {TAGLINE} → {shareHost()}
+        <p className="font-display text-center text-[15px] font-black tracking-tight" style={{ color }}>
+          Beat my {composite.strengthScore}. → {shareHost()}
         </p>
         <div className="mt-1.5 flex items-center justify-between">
           <span className="font-display text-[11px] font-extrabold tracking-tight text-textmut">{APP_NAME}</span>

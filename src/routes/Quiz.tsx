@@ -14,7 +14,8 @@ import { ResultView } from '../components/ResultView';
 import { Shell } from '../components/Shell';
 import { TAGLINE } from '../config';
 import { buildResult, resolveQuiz, type IronRankResult } from '../lib/result';
-import { resultPath } from '../lib/share';
+import { decodeResult, resultPathVs } from '../lib/share';
+import { takeChallenger } from '../lib/nav';
 
 const STEP_COMPONENTS = [SexUnits, AgeWeight, Lifts, Population];
 const STEP_NAMES = ['sex_units', 'age_bodyweight', 'lifts', 'compare'];
@@ -30,6 +31,7 @@ function QuizFlow() {
   const { state, dispatch } = useQuiz();
   const [phase, setPhase] = useState<Phase>('quiz');
   const [result, setResult] = useState<IronRankResult | null>(null);
+  const [opponent, setOpponent] = useState<IronRankResult | null>(null);
 
   // The funnel has begun the moment this chunk mounts (CTA was tapped on landing).
   const started = useRef(false);
@@ -76,11 +78,15 @@ function QuizFlow() {
       return;
     }
     const r = buildResult(input);
+    // If this run was a response to a challenge, attach the challenger (consumed).
+    const challengerEnc = takeChallenger();
+    const opp = challengerEnc ? decodeResult(new URLSearchParams(challengerEnc)) : null;
     setResult(r);
+    setOpponent(opp);
     // result_generated fires once here (on generation), not on card re-render.
-    trackEvent('result_generated', { ...resultEventProps(r), source: 'self' });
-    // Update URL so the result is shareable / refresh-safe (§6.2).
-    window.history.pushState({}, '', resultPath(r));
+    trackEvent('result_generated', { ...resultEventProps(r), source: opp ? 'challenge_response' : 'self' });
+    // Update URL so the result (+ head-to-head) is shareable / refresh-safe (§6.2).
+    window.history.pushState({}, '', resultPathVs(r, opp));
     setPhase('result');
     window.scrollTo(0, 0);
   };
@@ -88,6 +94,7 @@ function QuizFlow() {
   const startOver = () => {
     dispatch({ type: 'RESET' });
     setResult(null);
+    setOpponent(null);
     window.history.pushState({}, '', '/');
     setPhase('quiz');
     window.scrollTo(0, 0);
@@ -104,7 +111,7 @@ function QuizFlow() {
   if (phase === 'result' && result) {
     return (
       <Shell>
-        <ResultView result={result} onStartOver={startOver} />
+        <ResultView result={result} opponent={opponent} onStartOver={startOver} />
       </Shell>
     );
   }

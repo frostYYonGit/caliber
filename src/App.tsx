@@ -48,7 +48,7 @@ export default function App() {
     <>
       {route === 'result' ? (
         <Suspense fallback={<Splash />}>
-          <Result />
+          <Result onStartQuiz={startQuiz} />
         </Suspense>
       ) : route === 'quiz' ? (
         <Suspense fallback={<Splash />}>

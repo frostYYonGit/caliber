@@ -1,27 +1,49 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { rankUpLabel, type IronRankResult } from '../lib/result';
 import { ARCHETYPES } from '../data/archetypes';
 import { trackEvent } from '../lib/analytics';
+import { shareEventProps } from '../lib/analytics-result';
 import { ResultCard } from './ResultCard';
+import { HeadToHead } from './HeadToHead';
 import { ShareActions } from './ShareActions';
 
 /**
- * Result screen: the lean hero card → share actions (right under it) → the
- * demoted secondary details → methodology → rank again. Share sits directly
- * below the card so it's the first thing after the result (Edit 2).
+ * Result screen. Hero is the solo card — or, when you took the test as a response
+ * to a challenge, the head-to-head vs your rival. Challenge-first share sits
+ * directly under it, then demoted details. `opponent` is carried via URL state.
  */
 export function ResultView({
   result,
   onStartOver,
+  opponent = null,
   animate = true,
 }: {
   result: IronRankResult;
   onStartOver: () => void;
+  opponent?: IronRankResult | null;
   animate?: boolean;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const h2hRef = useRef<HTMLDivElement>(null);
+  const heroRef = opponent ? h2hRef : cardRef;
   const arch = result.archetype ? ARCHETYPES[result.archetype.id] : null;
   const rankUp = rankUpLabel(result);
+
+  const firedH2H = useRef(false);
+  useEffect(() => {
+    if (opponent && !firedH2H.current) {
+      firedH2H.current = true;
+      trackEvent('head_to_head_generated', {
+        ...shareEventProps(result),
+        outcome:
+          result.composite.strengthScore > opponent.composite.strengthScore
+            ? 'win'
+            : result.composite.strengthScore < opponent.composite.strengthScore
+              ? 'lose'
+              : 'tie',
+      });
+    }
+  }, [opponent, result]);
 
   const rankAgain = () => {
     trackEvent('rank_again_clicked', {
@@ -33,15 +55,18 @@ export function ResultView({
 
   return (
     <div className="flex w-full flex-col items-center gap-5">
-      <ResultCard ref={cardRef} result={result} animate={animate} />
+      {opponent ? (
+        <HeadToHead ref={h2hRef} you={result} them={opponent} />
+      ) : (
+        <ResultCard ref={cardRef} result={result} animate={animate} />
+      )}
 
-      {/* Share — directly below the card, the first thing after the result */}
-      <ShareActions result={result} cardRef={cardRef} />
+      {/* Share — challenge-first, directly below the card */}
+      <ShareActions result={result} cardRef={heroRef} opponent={opponent} />
       <div className="-mt-2 w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-center">
         <p className="text-[13px] text-text2">
-          Post your card.{' '}
-          <span className="text-text">Tag your weakest lift.</span>{' '}
-          <span className="text-accent">→ build in public</span>
+          Send this to whoever you lift with.{' '}
+          <span className="text-text">See who’s actually strongest.</span>
         </p>
       </div>
 
