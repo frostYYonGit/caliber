@@ -129,8 +129,8 @@ export function ShareActions({
       {/* Headline action — challenge a friend (the peer loop) */}
       <button
         onClick={challenge}
-        className="font-display flex w-full items-center justify-center rounded-xl bg-accent px-5 text-[17px] font-black tracking-tight text-[#0E0F12] transition-colors hover:bg-[#ff8a45]"
-        style={{ minHeight: 56 }}
+        className="flex w-full items-center justify-center rounded-xl bg-accent px-5 text-base font-bold text-[#0E0F12] transition-colors hover:bg-[#ff8a45]"
+        style={{ minHeight: 52 }}
       >
         Challenge a friend →
       </button>
