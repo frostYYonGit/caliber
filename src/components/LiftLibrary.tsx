@@ -197,6 +197,12 @@ export function LiftLibrary() {
         <LiftCard key={id} id={id} />
       ))}
 
+      {/* Swap helper — the defaults are barbell; make it obvious you can replace them */}
+      <p className="px-1 text-[12px] leading-snug text-textmut">
+        Don’t do these? Tap <span className="text-text2">×</span> and add what you actually train —
+        leg press, hack squat, machine press, anything.
+      </p>
+
       {/* Soft type-unlock upsell — never blocks finishing */}
       {hasAnyScored && missingGroup && (
         <p className="rounded-xl border border-accent/30 bg-accent/5 px-4 py-2.5 text-center text-[13px] text-text2">

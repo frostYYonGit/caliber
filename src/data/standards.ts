@@ -262,9 +262,14 @@ const FEMALE_STD: Record<LiftId, TierRatios> = {
   seated_cable_row: [0.493, 0.713, 0.973, 1.267, 1.457],
 };
 
-/** Composite weight (A4): HIGH compound full, MED compound ×0.75, isolation low. */
-const weightFor = (d: Def): number =>
-  d.kind === 'isolation' ? 0.25 : d.confidence === 'HIGH' ? 1.0 : 0.75;
+/**
+ * Composite weight: every scored lift counts EQUALLY — machine, cable, dumbbell
+ * and barbell alike. The old confidence-based down-weighting (MED ×0.75) was
+ * removed: the audience trains largely on machines/dumbbells, and taxing those
+ * lifts penalizes the core user. Machines are first-class. (Only real-standard
+ * lifts are scored at all; that honesty floor is unchanged — see SCORED_IDS.)
+ */
+const weightFor = (): number => 1.0;
 
 export const LIFTS: LiftMeta[] = DEFS.map((d) => {
   // Scored lifts use the StrengthLevel per-sex standards; tracked-only lifts
@@ -275,7 +280,7 @@ export const LIFTS: LiftMeta[] = DEFS.map((d) => {
     ...d,
     ratios,
     ratiosF,
-    weight: weightFor(d),
+    weight: weightFor(),
     scored: SCORED_IDS.has(d.id),
     aliases: ALIASES[d.id] ?? [],
   };
@@ -285,9 +290,11 @@ export const LIFT_BY_ID: Record<LiftId, LiftMeta> = Object.fromEntries(
   LIFTS.map((l) => [l.id, l]),
 );
 
-/** Preloaded defaults — recognizable everyday lifts, BENCH FIRST. Three so the
- *  all-expanded stack stays short; covers an upper + lower for the type read. */
-export const DEFAULT_LIFTS: LiftId[] = ['bench_press', 'lat_pulldown', 'leg_press'];
+/** Preloaded defaults — the big three everyone recognizes as "real strength"
+ *  (bench/squat/deadlift). Signals a legit tool on arrival; also what DOTS needs
+ *  and reads cleanly as push/legs/pull. Fully removable + swappable in one tap,
+ *  so a machine-user just replaces what they don't do. */
+export const DEFAULT_LIFTS: LiftId[] = ['bench_press', 'back_squat', 'deadlift'];
 
 export const LIFTS_BY_BODY_PART: Record<BodyPart, LiftMeta[]> = Object.fromEntries(
   BODY_PART_ORDER.map((bp) => [bp, LIFTS.filter((l) => l.bodyPart === bp)]),
