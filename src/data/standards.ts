@@ -222,10 +222,20 @@ const ALIASES: Record<LiftId, string[]> = {
  * they meet — mirroring StrengthLevel's own labels.
  * ----------------------------------------------------------------------------- */
 const SCORED_IDS = new Set<LiftId>([
-  'back_squat', 'front_squat', 'deadlift', 'romanian_deadlift', 'leg_press',
-  'bench_press', 'incline_bench', 'dumbbell_bench_press',
-  'overhead_press', 'dumbbell_shoulder_press',
-  'barbell_row', 'dumbbell_row', 'lat_pulldown', 'seated_cable_row',
+  // Legs
+  'back_squat', 'front_squat', 'deadlift', 'romanian_deadlift', 'sumo_deadlift',
+  'trap_bar_deadlift', 'leg_press', 'hack_squat', 'hip_thrust', 'leg_extension',
+  'leg_curl', 'seated_leg_curl',
+  // Chest
+  'bench_press', 'incline_bench', 'dumbbell_bench_press', 'incline_dumbbell_press',
+  'machine_chest_press', 'close_grip_bench_press',
+  // Shoulders
+  'overhead_press', 'dumbbell_shoulder_press', 'machine_shoulder_press', 'lateral_raise',
+  // Back
+  'barbell_row', 'dumbbell_row', 't_bar_row', 'lat_pulldown', 'seated_cable_row',
+  // Arms
+  'barbell_curl', 'dumbbell_curl', 'hammer_curl', 'cable_curl', 'preacher_curl',
+  'ez_bar_curl', 'tricep_pushdown', 'skullcrusher',
 ]);
 
 const MALE_STD: Record<LiftId, TierRatios> = {
@@ -243,6 +253,28 @@ const MALE_STD: Record<LiftId, TierRatios> = {
   dumbbell_row: [0.38, 0.55, 0.75, 0.975, 1.121],
   lat_pulldown: [0.74, 1.005, 1.315, 1.645, 1.892],
   seated_cable_row: [0.8, 1.07, 1.385, 1.715, 1.972],
+  // Added coverage — all transcribed from StrengthLevel per-bodyweight tables (200 lb male).
+  sumo_deadlift: [1.635, 2.085, 2.595, 3.125, 3.594],
+  trap_bar_deadlift: [1.58, 2.005, 2.485, 2.99, 3.439],
+  hack_squat: [1.27, 1.925, 2.72, 3.6, 4.14],
+  hip_thrust: [1.145, 1.755, 2.485, 3.31, 3.807],
+  leg_extension: [0.805, 1.195, 1.665, 2.185, 2.513],
+  leg_curl: [0.545, 0.81, 1.135, 1.49, 1.714],
+  seated_leg_curl: [0.66, 0.985, 1.37, 1.795, 2.064],
+  machine_chest_press: [0.76, 1.13, 1.57, 2.055, 2.363],
+  incline_dumbbell_press: [0.375, 0.5, 0.64, 0.79, 0.909],
+  close_grip_bench_press: [0.9, 1.155, 1.44, 1.735, 1.995],
+  machine_shoulder_press: [0.64, 0.975, 1.38, 1.835, 2.11],
+  lateral_raise: [0.11, 0.195, 0.3, 0.425, 0.489],
+  t_bar_row: [0.785, 1.105, 1.485, 1.89, 2.174],
+  barbell_curl: [0.4, 0.59, 0.815, 1.065, 1.225],
+  dumbbell_curl: [0.18, 0.295, 0.44, 0.605, 0.696],
+  hammer_curl: [0.205, 0.3, 0.415, 0.545, 0.627],
+  cable_curl: [0.38, 0.645, 0.975, 1.355, 1.558],
+  preacher_curl: [0.38, 0.565, 0.785, 1.03, 1.185],
+  ez_bar_curl: [0.415, 0.58, 0.775, 0.985, 1.133],
+  tricep_pushdown: [0.46, 0.72, 1.035, 1.395, 1.604],
+  skullcrusher: [0.385, 0.565, 0.775, 1.01, 1.162],
 };
 
 const FEMALE_STD: Record<LiftId, TierRatios> = {
@@ -260,6 +292,28 @@ const FEMALE_STD: Record<LiftId, TierRatios> = {
   dumbbell_row: [0.213, 0.327, 0.46, 0.62, 0.713],
   lat_pulldown: [0.467, 0.687, 0.94, 1.227, 1.411],
   seated_cable_row: [0.493, 0.713, 0.973, 1.267, 1.457],
+  // Real StrengthLevel FEMALE tables (150 lb) — never derived from male.
+  sumo_deadlift: [1.053, 1.42, 1.847, 2.3, 2.645],
+  trap_bar_deadlift: [1.047, 1.44, 1.893, 2.38, 2.737],
+  hack_squat: [0.793, 1.413, 2.207, 3.133, 3.603],
+  hip_thrust: [0.88, 1.427, 2.107, 2.88, 3.312],
+  leg_extension: [0.527, 0.873, 1.307, 1.8, 2.07],
+  leg_curl: [0.373, 0.573, 0.827, 1.107, 1.273],
+  seated_leg_curl: [0.44, 0.707, 1.04, 1.413, 1.625],
+  machine_chest_press: [0.32, 0.56, 0.873, 1.233, 1.418],
+  incline_dumbbell_press: [0.193, 0.307, 0.44, 0.587, 0.675],
+  close_grip_bench_press: [0.513, 0.74, 1.0, 1.287, 1.48],
+  machine_shoulder_press: [0.28, 0.507, 0.813, 1.167, 1.342],
+  lateral_raise: [0.08, 0.14, 0.213, 0.293, 0.337],
+  t_bar_row: [0.453, 0.713, 1.033, 1.4, 1.61],
+  barbell_curl: [0.22, 0.373, 0.573, 0.807, 0.928],
+  dumbbell_curl: [0.12, 0.207, 0.32, 0.453, 0.521],
+  hammer_curl: [0.127, 0.2, 0.287, 0.38, 0.437],
+  cable_curl: [0.233, 0.42, 0.66, 0.94, 1.081],
+  preacher_curl: [0.233, 0.393, 0.6, 0.833, 0.958],
+  ez_bar_curl: [0.28, 0.42, 0.587, 0.773, 0.889],
+  tricep_pushdown: [0.28, 0.473, 0.72, 1.007, 1.158],
+  skullcrusher: [0.193, 0.333, 0.513, 0.72, 0.828],
 };
 
 /**

@@ -147,13 +147,18 @@ describe('population comparison ordering', () => {
 });
 
 describe('tracked-not-scored (Option A — honesty)', () => {
-  it('core compound lifts are scored', () => {
-    for (const id of ['bench_press', 'back_squat', 'deadlift', 'lat_pulldown', 'leg_press']) {
+  it('common lifts are scored (expanded coverage — barbell / machine / dumbbell / cable)', () => {
+    for (const id of [
+      'bench_press', 'back_squat', 'deadlift', 'lat_pulldown', 'leg_press',
+      'hack_squat', 'hip_thrust', 'leg_extension', 'leg_curl', 'machine_chest_press',
+      'machine_shoulder_press', 't_bar_row', 'barbell_curl', 'tricep_pushdown',
+      'lateral_raise', 'sumo_deadlift',
+    ]) {
       expect(isScored(id)).toBe(true);
     }
   });
-  it('accessory / isolation lifts are tracked-only (excluded from scoring)', () => {
-    for (const id of ['hip_thrust', 'lateral_raise', 'barbell_curl', 'leg_extension', 'face_pull']) {
+  it('lifts with no real published standard stay tracked-only (honesty floor)', () => {
+    for (const id of ['face_pull', 'smith_machine_squat', 'goblet_squat', 'arnold_press', 'deficit_deadlift']) {
       expect(isScored(id)).toBe(false);
     }
   });
